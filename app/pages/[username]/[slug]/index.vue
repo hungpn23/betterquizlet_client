@@ -151,8 +151,8 @@ function addCardFirst() {
     id: `temp ${crypto.randomUUID()}` as UUID,
     term: '',
     definition: '',
-    correctCount: 0,
-    nextReviewDate: undefined,
+    streak: 0,
+    reviewDate: undefined,
     status: CardStatus.NEW,
   });
 
@@ -168,8 +168,8 @@ function addCardLast() {
     id: `temp ${crypto.randomUUID()}` as UUID,
     term: '',
     definition: '',
-    correctCount: 0,
-    nextReviewDate: undefined,
+    streak: 0,
+    reviewDate: undefined,
     status: CardStatus.NEW,
   });
 
@@ -190,7 +190,7 @@ function getCards(ignoreDate: boolean) {
   return ignoreDate
     ? deck.value.cards
     : deck.value.cards.filter(
-        (c) => !c.nextReviewDate || Date.parse(c.nextReviewDate) < Date.now(),
+        (c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
       );
 }
 
@@ -275,7 +275,7 @@ function onAnswersSaved(answers: CardAnswer[]) {
       if (answer) {
         Object.assign(c, {
           ...answer,
-          status: calcCardStatus(answer.nextReviewDate),
+          status: calcCardStatus(answer.reviewDate),
         });
       }
     }
@@ -326,7 +326,7 @@ function onAnswersSaved(answers: CardAnswer[]) {
               :deck="{ id: deckId, slug: deckSlug }"
               :cards="cards"
               @answers-saved="onAnswersSaved"
-              @restart="refreshData"
+              @restarted="refreshData"
               @ignore-date="onIgnoreDate"
             >
               <template #actions-left>
@@ -510,7 +510,7 @@ function onAnswersSaved(answers: CardAnswer[]) {
                   <span
                     v-else-if="
                       !isEditing &&
-                      c.nextReviewDate &&
+                      c.reviewDate &&
                       c.status === CardStatus.KNOWN
                     "
                     class="text-right text-sm text-balance"
@@ -518,7 +518,7 @@ function onAnswersSaved(answers: CardAnswer[]) {
                     Next review
 
                     {{
-                      formatDistanceToNowStrict(c.nextReviewDate, {
+                      formatDistanceToNowStrict(c.reviewDate, {
                         addSuffix: true,
                         unit: 'day',
                         roundingMethod: 'ceil',

@@ -14,17 +14,17 @@ const props = defineProps<Partial<Props>>();
 
 const emit = defineEmits<{
   (e: 'answers-saved', answers: CardAnswer[]): void;
-  (e: 'restart'): void;
+  (e: 'restarted'): void;
   (e: 'ignore-date'): void;
 }>();
 
 const { token } = useAuth();
 
 // --- Text-to-Speech Setup ---
-const textToSpeech = ref(''); // Biến trung gian lưu text cần đọc
-const { speak, isPlaying, stop } = useSpeechSynthesis(textToSpeech, {
-  lang: 'en-US', // Mặc định tiếng Anh (có thể đổi dynamic)
-  rate: 0.9, // Đọc chậm hơn 1 chút cho dễ nghe
+const textToSpeech = ref('');
+const { speak, stop } = useSpeechSynthesis(textToSpeech, {
+  lang: 'en-US',
+  rate: 0.9,
 });
 
 const isFlipped = ref(false);
@@ -96,10 +96,10 @@ async function restart() {
     headers: {
       Authorization: token.value || '',
     },
-  }).then(() => emit('restart'));
+  }).then(() => emit('restarted'));
 }
 
-function handleAnswer(isCorrect: boolean) {
+function handleAnswer(correct: boolean) {
   if (!flashcard.value) return;
 
   const updated = Object.assign(
@@ -107,19 +107,18 @@ function handleAnswer(isCorrect: boolean) {
     flashcard.value,
     calcCardState({
       ...flashcard.value,
-      isCorrect,
+      correct,
     }),
   );
 
-  // update stats & retry queue
-  if (isCorrect) {
+  if (correct) {
     knownCount.value++;
   } else {
     skippedCount.value++;
     learnState.retryQueue.push(updated);
   }
 
-  // update answers (trigger watchDebounced)
+  // trigger watchDebounced
   const index = learnState.answers.findIndex((a) => a.id === updated.id);
   if (index !== -1) {
     learnState.answers[index] = updated;
@@ -127,7 +126,6 @@ function handleAnswer(isCorrect: boolean) {
     learnState.answers.push(updated);
   }
 
-  // next Card Logic
   if (!learnState.queue.length) {
     if (!learnState.retryQueue.length) {
       flashcard.value = undefined;
@@ -141,19 +139,10 @@ function handleAnswer(isCorrect: boolean) {
   flashcard.value = learnState.queue.shift();
 }
 
-// Hàm helper để đọc bất kỳ đoạn text nào
 function playAudio(text?: string) {
   if (!text) return;
-
-  // 1. Dừng nếu đang đọc dở cái cũ
   stop();
-
-  // 2. Cập nhật text mới
   textToSpeech.value = text;
-
-  // 3. Phát (cần nextTick hoặc chờ 1 xíu để ref cập nhật, nhưng thường VueUse handle reactive tốt)
-  // Tuy nhiên, speak() của VueUse sẽ tự động trigger nếu watch thay đổi (nếu config),
-  // nhưng an toàn nhất là gọi trực tiếp:
   speak();
 }
 
@@ -162,8 +151,8 @@ function toggleFlip() {
   isFlipped.value = !isFlipped.value;
 }
 
-const throttledToggleFlip = useThrottleFn(toggleFlip, 200);
-const throttledHandleAnswer = useThrottleFn(handleAnswer, 200);
+const throttledToggleFlip = useThrottleFn(toggleFlip, 50);
+const throttledHandleAnswer = useThrottleFn(handleAnswer, 50);
 
 defineShortcuts({
   ' ': throttledToggleFlip,

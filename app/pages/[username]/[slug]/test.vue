@@ -52,7 +52,7 @@ watch(res, (newRes) => {
     learnState.answers = [];
     learnState.retryQueue = [];
     // learnState.flashcards = structuredClone(newRes.cards).filter(
-    //   (c) => !c.nextReviewDate || Date.parse(c.nextReviewDate) < Date.now(),
+    //   (c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
     // );
     learnState.queue = structuredClone(newRes.cards);
     learnState.totalCards = learnState.queue.length;
@@ -96,7 +96,7 @@ function toggleFlip() {
   isFlipped.value = !isFlipped.value;
 }
 
-function handleAnswer(isCorrect: boolean) {
+function handleAnswer(correct: boolean) {
   if (!flashcard.value) return;
 
   const updated = Object.assign(
@@ -104,12 +104,12 @@ function handleAnswer(isCorrect: boolean) {
     flashcard.value,
     calcCardState({
       ...flashcard.value,
-      isCorrect,
+      correct,
     }),
   );
 
-  // handle isCorrect & retryCards
-  isCorrect ? correctAnswersCount.value++ : learnState.retryQueue.push(updated);
+  // handle correct & retryCards
+  correct ? correctAnswersCount.value++ : learnState.retryQueue.push(updated);
 
   // handle answers
   const index = learnState.answers.findIndex((a) => a.id === updated.id);
@@ -180,7 +180,7 @@ async function saveAnswers() {
           if (answer) {
             Object.assign(c, {
               ...answer,
-              status: calcCardStatus(answer.nextReviewDate),
+              status: calcCardStatus(answer.reviewDate),
             });
           }
         }

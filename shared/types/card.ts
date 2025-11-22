@@ -9,14 +9,11 @@ export const CardSchema = v.object({
   ),
   term: v.pipe(v.string(), v.minLength(1, 'Term is required')),
   definition: v.pipe(v.string(), v.minLength(1, 'Definition is required')),
-  correctCount: v.pipe(
-    v.number(),
-    v.minValue(0, 'Correct count cannot be negative'),
-  ),
-  nextReviewDate: v.optional(
+  streak: v.pipe(v.number(), v.minValue(0, 'Streak cannot be negative')),
+  reviewDate: v.optional(
     v.pipe(
       v.string(),
-      v.minLength(1, 'Next review date is required'),
+      v.minLength(1, 'Review date is required'),
       v.transform((val) => new Date(val).toISOString()),
     ),
   ),
@@ -25,8 +22,6 @@ export const CardSchema = v.object({
 
 export type Card = v.InferOutput<typeof CardSchema>;
 
-export type CardAnswer = Pick<Card, 'id' | 'correctCount' | 'nextReviewDate'>;
+export type CardAnswer = Pick<Card, 'id' | 'streak' | 'reviewDate'>;
 
-export type CalcResult = Required<
-  Pick<Card, 'correctCount' | 'nextReviewDate'>
->;
+export type CalcResult = Required<Pick<Card, 'streak' | 'reviewDate'>>;

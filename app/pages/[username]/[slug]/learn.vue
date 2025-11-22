@@ -3,7 +3,7 @@ const deckState = reactive<Partial<DeckWithCards>>({});
 
 const isFlipped = ref(false);
 const shortcutPressed = ref(false);
-const correctAnswersCount = ref(0);
+const correctCount = ref(0);
 const flashcard = ref<Card | undefined>(undefined);
 
 const learnState = reactive<FlashcardState>({
@@ -16,7 +16,7 @@ const learnState = reactive<FlashcardState>({
 const progress = computed(() => {
   if (!learnState.totalCards) return 0;
 
-  return (correctAnswersCount.value / learnState.totalCards) * 100;
+  return (correctCount.value / learnState.totalCards) * 100;
 });
 
 const deckId = computed(() => {
@@ -48,11 +48,11 @@ const {
 watch(res, (newRes) => {
   if (newRes) {
     shortcutPressed.value = false;
-    correctAnswersCount.value = 0;
+    correctCount.value = 0;
     learnState.answers = [];
     learnState.retryQueue = [];
     // learnState.flashcards = structuredClone(newRes.cards).filter(
-    //   (c) => !c.nextReviewDate || Date.parse(c.nextReviewDate) < Date.now(),
+    //   (c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
     // );
     learnState.queue = structuredClone(newRes.cards);
     learnState.totalCards = learnState.queue.length;
@@ -96,7 +96,7 @@ function toggleFlip() {
   isFlipped.value = !isFlipped.value;
 }
 
-function handleAnswer(isCorrect: boolean) {
+function handleAnswer(correct: boolean) {
   if (!flashcard.value) return;
 
   const updated = Object.assign(
@@ -104,12 +104,11 @@ function handleAnswer(isCorrect: boolean) {
     flashcard.value,
     calcCardState({
       ...flashcard.value,
-      isCorrect,
+      correct,
     }),
   );
 
-  // handle isCorrect & retryCards
-  isCorrect ? correctAnswersCount.value++ : learnState.retryQueue.push(updated);
+  correct ? correctCount.value++ : learnState.retryQueue.push(updated);
 
   // handle answers
   const index = learnState.answers.findIndex((a) => a.id === updated.id);
@@ -180,7 +179,7 @@ async function saveAnswers() {
           if (answer) {
             Object.assign(c, {
               ...answer,
-              status: calcCardStatus(answer.nextReviewDate),
+              status: calcCardStatus(answer.reviewDate),
             });
           }
         }

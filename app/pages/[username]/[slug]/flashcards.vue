@@ -5,13 +5,11 @@ const route = useRoute();
 const cards = ref<Card[]>([]);
 
 const deckId = computed(() => route.query.deckId as string);
-
 const deckSlug = computed(() => {
   const slug = route.params.slug;
 
   return Array.isArray(slug) ? slug[0] : slug;
 });
-
 const username = computed(() => {
   const n = route.params.username;
 
@@ -37,7 +35,7 @@ function getCards(ignoreDate: boolean) {
   return ignoreDate
     ? deck.value.cards
     : deck.value.cards.filter(
-        (c) => !c.nextReviewDate || Date.parse(c.nextReviewDate) < Date.now(),
+        (c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
       );
 }
 
@@ -56,7 +54,7 @@ async function onIgnoreDate() {
       :cards="cards"
       :pending="pending"
       routing
-      @restart="refreshData"
+      @restarted="refreshData"
       @ignore-date="onIgnoreDate"
     >
       <template #header>

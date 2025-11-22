@@ -1,26 +1,35 @@
-import { addDays } from 'date-fns';
+import { addDays, isAfter } from 'date-fns';
 
-export default (options: {
-  correctCount: number;
-  isCorrect: boolean;
-  nextReviewDate?: string;
-}): CalcResult => {
-  const { nextReviewDate, correctCount, isCorrect } = options;
-  const count = isCorrect ? correctCount + 1 : 0;
-  const daysToAdd = count > 0 ? Math.min(Math.pow(2, count - 1), 365) : 0;
+type Options = {
+  streak: number;
+  correct: boolean;
+  reviewDate?: string;
+};
 
-  if (!daysToAdd) {
+export default (opts: Options): CalcResult => {
+  const { streak, correct, reviewDate } = opts;
+  const now = new Date();
+
+  if (!correct) {
     return {
-      correctCount: 0,
-      nextReviewDate: new Date().toISOString(),
+      streak: 0,
+      reviewDate: now.toISOString(),
     };
   }
 
+  const newStreak = streak + 1;
+
+  const gap = Math.pow(2, newStreak - 1);
+
+  const baseDate = reviewDate ? new Date(reviewDate) : now;
+  const nextDate = addDays(baseDate, gap);
+
+  const maxDate = addDays(now, 30);
+
+  const finalDate = isAfter(nextDate, maxDate) ? maxDate : nextDate;
+
   return {
-    correctCount: count,
-    nextReviewDate: addDays(
-      nextReviewDate || Date.now(),
-      daysToAdd,
-    ).toISOString(),
+    streak: newStreak,
+    reviewDate: finalDate.toISOString(),
   };
 };
