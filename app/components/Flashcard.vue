@@ -7,20 +7,20 @@ type Props = {
   };
   cards: Card[];
   pending: boolean;
+  routing: boolean;
 };
 
 const props = defineProps<Partial<Props>>();
 
 const emit = defineEmits<{
-  (e: 'saved', answers: CardAnswer[]): void;
-  (e: 'refresh-data'): void;
+  (e: 'answers-saved', answers: CardAnswer[]): void;
+  (e: 'restart'): void;
   (e: 'ignore-date'): void;
 }>();
 
 const { token } = useAuth();
 
 const isFlipped = ref(false);
-
 const knownCount = ref(0);
 const skippedCount = ref(0);
 const flashcard = ref<Card | undefined>(undefined);
@@ -75,7 +75,7 @@ async function saveAnswers() {
     body: { answers: answersToSave },
   })
     .then(() => {
-      emit('saved', answersToSave);
+      emit('answers-saved', answersToSave);
       learnState.answers = [];
     })
     .catch((error: ErrorResponse) => {
@@ -83,13 +83,13 @@ async function saveAnswers() {
     });
 }
 
-async function refreshDeckProgress() {
-  $fetch(`/api/decks/refresh/${props.deck?.id}`, {
+async function restart() {
+  $fetch(`/api/decks/restart/${props.deck?.id}`, {
     method: 'POST',
     headers: {
       Authorization: token.value || '',
     },
-  }).then(() => emit('refresh-data'));
+  }).then(() => emit('restart'));
 }
 
 function handleAnswer(isCorrect: boolean) {
@@ -152,7 +152,7 @@ defineShortcuts({
 <template>
   <ClientOnly>
     <div class="flex w-full flex-col gap-4">
-      <div class="flex place-content-between place-items-center">
+      <div v-if="routing" class="flex place-content-between place-items-center">
         <UButton
           :to="`/${username}/${props.deck?.slug}?deckId=${props.deck?.id}`"
           class="mt-2 cursor-pointer px-0 text-base"
@@ -238,6 +238,7 @@ defineShortcuts({
                 icon="i-heroicons-check"
                 size="lg"
                 variant="subtle"
+                color="success"
                 class="cursor-pointer transition-transform hover:shadow active:scale-90"
                 @click="throttledHandleAnswer(true)"
               />
@@ -278,20 +279,20 @@ defineShortcuts({
             class: 'cursor-pointer hover:scale-102 hover:shadow',
           },
           {
+            icon: 'i-lucide-refresh-cw',
+            label: 'Restart',
+            color: 'error',
+            variant: 'outline',
+            class: 'cursor-pointer hover:scale-102 hover:shadow',
+            onClick: restart,
+          },
+          {
             icon: 'i-lucide-fast-forward',
             label: 'Ignore & continue',
             color: 'neutral',
             variant: 'subtle',
             class: 'cursor-pointer hover:scale-102 hover:shadow',
             onClick: () => emit('ignore-date'),
-          },
-          {
-            icon: 'i-lucide-refresh-cw',
-            label: 'Refresh progress',
-            color: 'error',
-            variant: 'outline',
-            class: 'cursor-pointer hover:scale-102 hover:shadow',
-            onClick: refreshDeckProgress,
           },
         ]"
         variant="naked"

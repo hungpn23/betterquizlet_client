@@ -8,52 +8,24 @@ import { CardStatus } from '~/utils/enums';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { DeckWithCardsSchema } from '~~/shared/types/deck';
 
-// --- Hooks ---
 const toast = useToast();
 const router = useRouter();
 const route = useRoute();
 const { token, data: user } = useAuth();
 
-// --- Form State ---
-
 const formErrorMsg = ref('');
 const isEditing = ref(false);
 const isSaving = ref(false);
+const cards = ref<Card[]>([]);
 const form = useTemplateRef('form');
-
 const deckState = reactive<Partial<DeckWithCards>>({});
 
-// --- Learning State ---
-const isFlipped = ref(false);
-const shortcutPressed = ref(false);
-const correctAnswersCount = ref(0);
-const flashcard = ref<Card | undefined>(undefined);
-
-const learnState = reactive<FlashcardState>({
-  totalCards: 0,
-  queue: [],
-  answers: [],
-  retryQueue: [],
-});
-
-// --- Computed Properties ---
-
-const deckId = computed(() => {
-  const q = route.query.deckId;
-
-  return Array.isArray(q) ? q[0] : q;
-});
+const deckId = computed(() => route.query.deckId as string);
 
 const deckSlug = computed(() => {
   const slug = route.params.slug;
 
   return Array.isArray(slug) ? slug[0] : slug;
-});
-
-const progress = computed(() => {
-  if (!learnState.totalCards) return 0;
-
-  return (correctAnswersCount.value / learnState.totalCards) * 100;
 });
 
 const DeckSettingOptions = computed<DropdownMenuItem[][]>(() => [
@@ -101,10 +73,10 @@ const StudyOptions = computed(() => [
 // --- Fetching Data ---
 
 const {
-  data: res,
+  data: deck,
   error,
-  status: fetchStatus,
-  refresh: refreshDeckData,
+  status,
+  refresh: refreshData,
 } = await useLazyFetch<DeckWithCards, ErrorResponse>(
   `/api/decks/${deckId.value}`,
   {
@@ -116,62 +88,40 @@ const {
 );
 
 // --- Watchers ---
+watch(
+  status,
+  (newStatus) => {
+    if (newStatus === 'error') {
+      toast.add({
+        title: 'Error fetching decks',
+        description: JSON.stringify(error.value?.data || 'Unknown error'),
+        color: 'error',
+        duration: 2000,
+      });
+    }
+  },
+  { immediate: true },
+);
 
-watch(res, (newRes) => {
-  if (newRes) {
-    resetFormState(newRes);
-
-    shortcutPressed.value = false;
-    correctAnswersCount.value = 0;
-    learnState.answers = [];
-    learnState.retryQueue = [];
-    learnState.queue = structuredClone(newRes.cards).filter(
-      (c) => !c.nextReviewDate || Date.parse(c.nextReviewDate) < Date.now(),
-    );
-    learnState.totalCards = learnState.queue.length;
-    flashcard.value = learnState.queue.shift();
-
-    toast.add({
-      title: 'Flashcard data initialized successfully.',
-      color: 'success',
-      duration: 2000,
-    });
-  }
-});
-
-watch(flashcard, () => {
-  isFlipped.value = false;
-});
-
-watch(fetchStatus, (newStatus) => {
-  if (newStatus === 'error') {
-    toast.add({
-      title: 'Error fetching decks',
-      description: JSON.stringify(error.value?.data || 'Unknown error'),
-      color: 'error',
-      duration: 2000,
-    });
-  }
-});
-
-watchDebounced(learnState, saveAnswers, {
-  debounce: 1000,
-  maxWait: 3000,
-  deep: true,
-});
-
-if (fetchStatus.value === 'error') {
-}
+watch(
+  deck,
+  (newDeck) => {
+    resetFormState(newDeck);
+    cards.value = getCards(false);
+  },
+  {
+    immediate: true,
+  },
+);
 
 // --- Form Functions ---
-
 function startEditing() {
   isEditing.value = true;
 }
 
 function cancelEditing() {
+  resetFormState(deck.value);
   isEditing.value = false;
-  resetFormState(res.value);
   form.value?.clear();
   formErrorMsg.value = '';
 
@@ -228,6 +178,16 @@ function deleteCard(cardId?: UUID) {
   deckState.cards = deckState.cards?.filter((c) => c.id !== cardId);
 }
 
+function getCards(ignoreDate: boolean) {
+  if (!deck.value) return [];
+
+  return ignoreDate
+    ? deck.value.cards
+    : deck.value.cards.filter(
+        (c) => !c.nextReviewDate || Date.parse(c.nextReviewDate) < Date.now(),
+      );
+}
+
 async function onDeckDelete() {
   $fetch(`/api/decks/${deckId.value}`, {
     method: 'DELETE',
@@ -261,7 +221,7 @@ async function onSubmit(event: FormSubmitEvent<DeckWithCards>) {
   })
     .then(async () => {
       isEditing.value = false;
-      await refreshDeckData();
+      await refreshData();
 
       toast.add({
         title: 'Changes saved successfully.',
@@ -293,141 +253,32 @@ async function onError(event: FormErrorEvent) {
     : 'Please fill in all required fields.';
 }
 
-// --- Learning Logic Functions ---
+async function onIgnoreDate() {
+  await refreshData();
 
-function toggleFlip() {
-  if (!flashcard.value) return;
-  if (!shortcutPressed.value) shortcutPressed.value = true;
-
-  isFlipped.value = !isFlipped.value;
+  cards.value = getCards(true);
 }
 
-function handleAnswer(isCorrect: boolean) {
-  if (!flashcard.value) return;
+function onAnswersSaved(answers: CardAnswer[]) {
+  const map = new Map(answers.map((a) => [a.id, a]));
 
-  const updated = Object.assign(
-    {},
-    flashcard.value,
-    calcCardState({
-      ...flashcard.value,
-      isCorrect,
-    }),
-  );
+  if (deckState.cards?.length) {
+    for (const c of deckState.cards) {
+      const answer = map.get(c.id);
 
-  // handle isCorrect & retryCards
-  isCorrect ? correctAnswersCount.value++ : learnState.retryQueue.push(updated);
-
-  // handle answers
-  const index = learnState.answers.findIndex((a) => a.id === updated.id);
-  if (index !== -1) {
-    learnState.answers[index] = updated;
-  } else {
-    learnState.answers.push(updated);
-  }
-
-  // handle flashcards
-  if (!learnState.queue.length) {
-    if (!learnState.retryQueue.length) {
-      flashcard.value = undefined;
-      return;
-    }
-
-    learnState.queue = learnState.retryQueue;
-    learnState.retryQueue = [];
-  }
-
-  // next flashcard
-  flashcard.value = learnState.queue.shift();
-}
-
-async function refreshDeckProgress() {
-  $fetch(`/api/decks/refresh/${deckId.value}`, {
-    method: 'POST',
-    headers: {
-      Authorization: token.value || '',
-    },
-  })
-    .then(async () => {
-      await refreshDeckData();
-
-      toast.add({
-        title: 'refreshDeckProgress successfully.',
-        color: 'success',
-        duration: 2000,
-      });
-    })
-    .catch((error: ErrorResponse) => {
-      toast.add({
-        title: 'Error refreshing deck!',
-        description: JSON.stringify(error.data || 'Unknown error'),
-        color: 'error',
-        duration: 2000,
-      });
-    });
-}
-
-async function saveAnswers() {
-  if (learnState.answers.length === 0) return;
-
-  $fetch(`/api/study/save-answer/${deckId.value}`, {
-    method: 'POST',
-    headers: {
-      Authorization: token.value || '',
-    },
-    body: { answers: learnState.answers },
-  })
-    .then(() => {
-      const map = new Map(learnState.answers.map((a) => [a.id, a]));
-
-      if (deckState.cards?.length) {
-        for (const c of deckState.cards) {
-          const answer = map.get(c.id);
-
-          if (answer) {
-            Object.assign(c, {
-              ...answer,
-              status: calcCardStatus(answer.nextReviewDate),
-            });
-          }
-        }
+      if (answer) {
+        Object.assign(c, {
+          ...answer,
+          status: calcCardStatus(answer.nextReviewDate),
+        });
       }
-
-      learnState.answers = [];
-
-      toast.add({
-        title: 'Auto saveAnswers successfully.',
-        color: 'success',
-        duration: 2000,
-      });
-    })
-    .catch((error: ErrorResponse) => {
-      console.error('Failed to save answers:', error.data);
-    });
+    }
+  }
 }
-
-async function ignoreNextReviewDate() {
-  await refreshDeckData();
-  learnState.queue = structuredClone(res.value?.cards || []);
-  learnState.totalCards = learnState.queue.length;
-  flashcard.value = learnState.queue.shift();
-}
-
-// --- Shortcuts/Side Effects ---
-
-const throttledToggleFlip = useThrottleFn(toggleFlip, 200);
-const throttledHandleAnswer = useThrottleFn(handleAnswer, 200);
-
-defineShortcuts({
-  ' ': throttledToggleFlip,
-  arrowright: () => throttledHandleAnswer(true),
-  arrowleft: () => throttledHandleAnswer(false),
-});
 </script>
 
 <template>
-  <SkeletonDeckDetailPage
-    v-if="fetchStatus === 'pending' || fetchStatus === 'idle'"
-  />
+  <SkeletonDeckDetailPage v-if="status === 'pending' || status === 'idle'" />
 
   <UPage v-else>
     <UContainer>
@@ -464,21 +315,15 @@ defineShortcuts({
             </div>
 
             <!-- Flashcard Study -->
-            <div v-if="flashcard" class="flex flex-col gap-2">
-              <UProgress v-model="progress" :ui="{ base: 'bg-elevated' }" />
-
-              <UCard
-                :ui="{
-                  body: 'grow flex place-items-center text-left text-2xl font-semibold px-6 sm:px-12 sm:text-3xl',
-                }"
-                variant="soft"
-                class="bg-elevated flex min-h-[50dvh] w-full flex-col place-items-center divide-none text-center shadow-md"
-                @click="throttledToggleFlip"
-              >
-                {{ !isFlipped ? flashcard?.term : flashcard?.definition }}
-              </UCard>
-
-              <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <Flashcard
+              :username="user?.username"
+              :deck="{ id: deckId, slug: deckSlug }"
+              :cards="cards"
+              @answers-saved="onAnswersSaved"
+              @restart="refreshData"
+              @ignore-date="onIgnoreDate"
+            >
+              <template #actions-left>
                 <UButton
                   :to="`/${user?.username}`"
                   variant="link"
@@ -499,30 +344,9 @@ defineShortcuts({
                     </div>
                   </div>
                 </UButton>
+              </template>
 
-                <div
-                  class="order-first col-span-full flex place-content-center place-items-center gap-3 sm:order-0 sm:col-span-1"
-                >
-                  <UButton
-                    label="Skip"
-                    icon="i-heroicons-x-mark"
-                    size="lg"
-                    variant="subtle"
-                    color="error"
-                    class="cursor-pointer transition-transform hover:shadow active:scale-90"
-                    @click="throttledHandleAnswer(false)"
-                  />
-
-                  <UButton
-                    label="Next"
-                    icon="i-heroicons-check"
-                    size="lg"
-                    variant="subtle"
-                    class="cursor-pointer transition-transform hover:shadow active:scale-90"
-                    @click="throttledHandleAnswer(true)"
-                  />
-                </div>
-
+              <template #actions-right>
                 <div class="flex place-content-end place-items-center gap-2">
                   <UButton
                     class="cursor-pointer"
@@ -542,60 +366,8 @@ defineShortcuts({
                     />
                   </UDropdownMenu>
                 </div>
-              </div>
-
-              <div
-                v-if="!shortcutPressed"
-                class="hidden w-full place-content-center place-items-center gap-2 rounded-md p-2 text-current sm:px-4 lg:flex"
-              >
-                <span
-                  class="inline-flex place-content-center place-items-center gap-2 rounded-md border border-current px-2 py-0.5 font-bold"
-                >
-                  <UIcon class="size-5" name="i-lucide-keyboard" />
-                  <span>Shortcuts</span>
-                </span>
-
-                Press <Kbd label="Space" /> to flip,
-                <Kbd :icon="{ name: 'i-lucide-move-right' }" /> to move next,
-                <Kbd :icon="{ name: 'i-lucide-move-left' }" /> to skip.
-              </div>
-            </div>
-
-            <!-- Finished component -->
-            <UEmpty
-              v-else
-              :actions="[
-                {
-                  to: '/home',
-                  icon: 'i-lucide-house',
-                  label: 'Home',
-                  color: 'success' as const,
-                  variant: 'subtle' as const,
-                  class: 'cursor-pointer hover:scale-102 hover:shadow',
-                },
-                {
-                  icon: 'i-lucide-fast-forward',
-                  label: 'Ignore & continue',
-                  color: 'neutral' as const,
-                  variant: 'subtle' as const,
-                  class: 'cursor-pointer hover:scale-102 hover:shadow',
-                  onClick: ignoreNextReviewDate,
-                },
-                {
-                  icon: 'i-lucide-refresh-cw',
-                  label: 'Refresh progress',
-                  color: 'error' as const,
-                  variant: 'outline' as const,
-                  class: 'cursor-pointer hover:scale-102 hover:shadow',
-                  onClick: refreshDeckProgress,
-                },
-              ]"
-              variant="naked"
-              icon="i-lucide-party-popper"
-              title="You're all caught up — nothing to review now."
-              description="Optimize your retention by strictly adhering to the next review date."
-              size="xl"
-            />
+              </template>
+            </Flashcard>
           </div>
 
           <!-- Title and Description -->
@@ -641,8 +413,8 @@ defineShortcuts({
               >
                 Terms ({{ deckState.cards?.length || 0 }})
 
-                <UIcon
-                  v-if="!learnState.answers.length"
+                <!-- <UIcon
+                  v-if="!savingAnswers"
                   class="text-success size-6"
                   name="i-lucide-check"
                 />
@@ -652,7 +424,7 @@ defineShortcuts({
                   class="ml-2 place-self-end-safe text-base font-normal text-current/75 sm:text-lg"
                 >
                   Saving...
-                </span>
+                </span> -->
               </h2>
 
               <div v-if="isEditing" class="flex gap-2 place-self-end">
