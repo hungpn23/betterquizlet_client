@@ -31,9 +31,9 @@ const flashcard = ref<Card | undefined>(undefined);
 
 const learnState = reactive<FlashcardState>({
   totalCards: 0,
-  flashcards: [],
+  queue: [],
   answers: [],
-  retryCards: [],
+  retryQueue: [],
 });
 
 // --- Computed Properties ---
@@ -124,12 +124,12 @@ watch(res, (newRes) => {
     shortcutPressed.value = false;
     correctAnswersCount.value = 0;
     learnState.answers = [];
-    learnState.retryCards = [];
-    learnState.flashcards = structuredClone(newRes.cards).filter(
+    learnState.retryQueue = [];
+    learnState.queue = structuredClone(newRes.cards).filter(
       (c) => !c.nextReviewDate || Date.parse(c.nextReviewDate) < Date.now(),
     );
-    learnState.totalCards = learnState.flashcards.length;
-    flashcard.value = learnState.flashcards.shift();
+    learnState.totalCards = learnState.queue.length;
+    flashcard.value = learnState.queue.shift();
 
     toast.add({
       title: 'Flashcard data initialized successfully.',
@@ -315,7 +315,7 @@ function handleAnswer(isCorrect: boolean) {
   );
 
   // handle isCorrect & retryCards
-  isCorrect ? correctAnswersCount.value++ : learnState.retryCards.push(updated);
+  isCorrect ? correctAnswersCount.value++ : learnState.retryQueue.push(updated);
 
   // handle answers
   const index = learnState.answers.findIndex((a) => a.id === updated.id);
@@ -326,18 +326,18 @@ function handleAnswer(isCorrect: boolean) {
   }
 
   // handle flashcards
-  if (!learnState.flashcards.length) {
-    if (!learnState.retryCards.length) {
+  if (!learnState.queue.length) {
+    if (!learnState.retryQueue.length) {
       flashcard.value = undefined;
       return;
     }
 
-    learnState.flashcards = learnState.retryCards;
-    learnState.retryCards = [];
+    learnState.queue = learnState.retryQueue;
+    learnState.retryQueue = [];
   }
 
   // next flashcard
-  flashcard.value = learnState.flashcards.shift();
+  flashcard.value = learnState.queue.shift();
 }
 
 async function refreshDeckProgress() {
@@ -407,9 +407,9 @@ async function saveAnswers() {
 
 async function ignoreNextReviewDate() {
   await refreshDeckData();
-  learnState.flashcards = structuredClone(res.value?.cards || []);
-  learnState.totalCards = learnState.flashcards.length;
-  flashcard.value = learnState.flashcards.shift();
+  learnState.queue = structuredClone(res.value?.cards || []);
+  learnState.totalCards = learnState.queue.length;
+  flashcard.value = learnState.queue.shift();
 }
 
 // --- Shortcuts/Side Effects ---

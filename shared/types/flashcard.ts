@@ -1,8 +1,8 @@
-import type { Card, CardAnswer } from "./card";
+import type { Card, CardAnswer } from './card';
 
 export type FlashcardState = {
   totalCards: number;
-  flashcards: Card[];
+  queue: Card[];
   answers: CardAnswer[];
-  retryCards: Card[];
+  retryQueue: Card[];
 };

@@ -8,9 +8,9 @@ const flashcard = ref<Card | undefined>(undefined);
 
 const learnState = reactive<FlashcardState>({
   totalCards: 0,
-  flashcards: [],
+  queue: [],
   answers: [],
-  retryCards: [],
+  retryQueue: [],
 });
 
 const progress = computed(() => {
@@ -50,13 +50,13 @@ watch(res, (newRes) => {
     shortcutPressed.value = false;
     correctAnswersCount.value = 0;
     learnState.answers = [];
-    learnState.retryCards = [];
+    learnState.retryQueue = [];
     // learnState.flashcards = structuredClone(newRes.cards).filter(
     //   (c) => !c.nextReviewDate || Date.parse(c.nextReviewDate) < Date.now(),
     // );
-    learnState.flashcards = structuredClone(newRes.cards);
-    learnState.totalCards = learnState.flashcards.length;
-    flashcard.value = learnState.flashcards.shift();
+    learnState.queue = structuredClone(newRes.cards);
+    learnState.totalCards = learnState.queue.length;
+    flashcard.value = learnState.queue.shift();
 
     console.log('🔥🔥🔥 flashcard.value', flashcard.value);
 
@@ -109,7 +109,7 @@ function handleAnswer(isCorrect: boolean) {
   );
 
   // handle isCorrect & retryCards
-  isCorrect ? correctAnswersCount.value++ : learnState.retryCards.push(updated);
+  isCorrect ? correctAnswersCount.value++ : learnState.retryQueue.push(updated);
 
   // handle answers
   const index = learnState.answers.findIndex((a) => a.id === updated.id);
@@ -120,18 +120,18 @@ function handleAnswer(isCorrect: boolean) {
   }
 
   // handle flashcards
-  if (!learnState.flashcards.length) {
-    if (!learnState.retryCards.length) {
+  if (!learnState.queue.length) {
+    if (!learnState.retryQueue.length) {
       flashcard.value = undefined;
       return;
     }
 
-    learnState.flashcards = learnState.retryCards;
-    learnState.retryCards = [];
+    learnState.queue = learnState.retryQueue;
+    learnState.retryQueue = [];
   }
 
   // next flashcard
-  flashcard.value = learnState.flashcards.shift();
+  flashcard.value = learnState.queue.shift();
 }
 
 async function refreshDeckProgress() {
