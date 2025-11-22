@@ -6,6 +6,7 @@ import * as v from 'valibot';
 
 export const DeckWithCardsSchema = v.object({
   name: v.pipe(v.string(), v.minLength(1, 'Name is required')),
+  slug: v.pipe(v.string(), v.minLength(1, 'Slug is required')),
   description: v.string(),
   cards: v.pipe(
     v.array(CardSchema),

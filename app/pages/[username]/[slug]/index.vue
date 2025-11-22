@@ -8,6 +8,12 @@ import { CardStatus } from '~/utils/enums';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { DeckWithCardsSchema } from '~~/shared/types/deck';
 
+// --- Hooks ---
+const toast = useToast();
+const router = useRouter();
+const route = useRoute();
+const { token, data: user } = useAuth();
+
 // --- Form State ---
 
 const formErrorMsg = ref('');
@@ -33,9 +39,15 @@ const learnState = reactive<FlashcardState>({
 // --- Computed Properties ---
 
 const deckId = computed(() => {
-  const q = useRoute().query.deckId;
+  const q = route.query.deckId;
 
   return Array.isArray(q) ? q[0] : q;
+});
+
+const deckSlug = computed(() => {
+  const slug = route.params.slug;
+
+  return Array.isArray(slug) ? slug[0] : slug;
 });
 
 const progress = computed(() => {
@@ -44,7 +56,7 @@ const progress = computed(() => {
   return (correctAnswersCount.value / learnState.totalCards) * 100;
 });
 
-const items = computed<DropdownMenuItem[][]>(() => [
+const DeckSettingOptions = computed<DropdownMenuItem[][]>(() => [
   [
     {
       label: 'Edit',
@@ -63,32 +75,31 @@ const items = computed<DropdownMenuItem[][]>(() => [
   ],
 ]);
 
-// --- Static ---
-
-const studyItems = [
+const StudyOptions = computed(() => [
   {
     label: 'Flashcards',
     icon: 'i-lucide-file-plus',
+    to: `/${user.value?.username}/${deckSlug.value}/flashcards?deckId=${deckId.value}`,
   },
   {
     label: 'Learn',
     icon: 'i-lucide-book-marked',
+    to: `/${user.value?.username}/${deckSlug.value}/learn?deckId=${deckId.value}`,
   },
   {
     label: 'Test',
     icon: 'i-lucide-book-check',
+    to: `/${user.value?.username}/${deckSlug.value}/test?deckId=${deckId.value}`,
   },
   {
     label: 'Comming soon',
     icon: '',
+    to: `#`,
   },
-];
+]);
 
-// --- Hooks / Fetching Data ---
+// --- Fetching Data ---
 
-const toast = useToast();
-const router = useRouter();
-const { token, data: user } = useAuth();
 const {
   data: res,
   error,
@@ -217,16 +228,6 @@ function deleteCard(cardId?: UUID) {
   deckState.cards = deckState.cards?.filter((c) => c.id !== cardId);
 }
 
-function goToHome() {
-  router.push(`/home`);
-
-  toast.add({
-    title: 'Go to successfully.',
-    color: 'success',
-    duration: 2000,
-  });
-}
-
 async function onDeckDelete() {
   $fetch(`/api/decks/${deckId.value}`, {
     method: 'DELETE',
@@ -234,7 +235,9 @@ async function onDeckDelete() {
       Authorization: token.value || '',
     },
   })
-    .then(goToHome)
+    .then(() => {
+      router.push(`/home`);
+    })
     .catch((error: ErrorResponse) => {
       toast.add({
         title: 'Error deleting deck',
@@ -428,6 +431,14 @@ defineShortcuts({
 
   <UPage v-else>
     <UContainer>
+      <UButton
+        to="/home"
+        class="hover:text-primary mt-2 cursor-pointer px-0 text-base hover:underline"
+        variant="link"
+        icon="i-lucide-move-left"
+        label="Back to home"
+      />
+
       <UForm
         :schema="DeckWithCardsSchema"
         :state="deckState"
@@ -435,19 +446,16 @@ defineShortcuts({
         @submit="onSubmit"
         @error="onError"
       >
-        <UPageHeader
-          :ui="{
-            title: 'flex-1',
-          }"
-        >
+        <UPageHeader :ui="{ title: 'flex-1' }" class="py-0 pb-8">
           <div class="mt-4 flex flex-col-reverse gap-4 lg:flex-col">
+            <!-- Learning Options -->
             <div class="grid grid-cols-2 gap-2 lg:grid-cols-4">
               <UButton
-                v-for="{ label, icon } in studyItems"
+                v-for="{ label, icon, to } in StudyOptions"
                 :key="label"
-                class="flex place-content-center place-items-center py-3"
+                :to="to"
+                class="flex place-content-center place-items-center py-3 hover:scale-102 hover:shadow"
                 variant="subtle"
-                to="#"
               >
                 <UIcon :name="icon" class="size-5" />
 
@@ -455,15 +463,16 @@ defineShortcuts({
               </UButton>
             </div>
 
+            <!-- Flashcard Study -->
             <div v-if="flashcard" class="flex flex-col gap-2">
-              <UProgress v-model="progress" />
+              <UProgress v-model="progress" :ui="{ base: 'bg-elevated' }" />
 
               <UCard
                 :ui="{
                   body: 'grow flex place-items-center text-left text-2xl font-semibold px-6 sm:px-12 sm:text-3xl',
                 }"
                 variant="soft"
-                class="bg-elevated flex min-h-[50dvh] w-full flex-col place-items-center divide-none text-center"
+                class="bg-elevated flex min-h-[50dvh] w-full flex-col place-items-center divide-none text-center shadow-md"
                 @click="throttledToggleFlip"
               >
                 {{ !isFlipped ? flashcard?.term : flashcard?.definition }}
@@ -500,7 +509,7 @@ defineShortcuts({
                     size="lg"
                     variant="subtle"
                     color="error"
-                    class="cursor-pointer transition-transform duration-200 ease-in-out active:scale-90"
+                    class="cursor-pointer transition-transform hover:shadow active:scale-90"
                     @click="throttledHandleAnswer(false)"
                   />
 
@@ -509,25 +518,27 @@ defineShortcuts({
                     icon="i-heroicons-check"
                     size="lg"
                     variant="subtle"
-                    class="cursor-pointer transition-transform active:scale-95"
+                    class="cursor-pointer transition-transform hover:shadow active:scale-90"
                     @click="throttledHandleAnswer(true)"
                   />
                 </div>
 
-                <div class="flex place-content-end gap-2">
+                <div class="flex place-content-end place-items-center gap-2">
                   <UButton
                     class="cursor-pointer"
                     color="neutral"
                     icon="i-lucide-shuffle"
                     variant="ghost"
+                    size="lg"
                   />
 
-                  <UDropdownMenu :items="items">
+                  <UDropdownMenu :items="DeckSettingOptions">
                     <UButton
                       class="cursor-pointer"
                       color="neutral"
                       icon="i-lucide-settings"
                       variant="ghost"
+                      size="lg"
                     />
                   </UDropdownMenu>
                 </div>
@@ -535,45 +546,48 @@ defineShortcuts({
 
               <div
                 v-if="!shortcutPressed"
-                class="flex w-full place-content-center place-items-center gap-2 rounded-md p-2 text-current sm:px-4"
+                class="hidden w-full place-content-center place-items-center gap-2 rounded-md p-2 text-current sm:px-4 lg:flex"
               >
                 <span
-                  class="hidden place-content-center place-items-center gap-2 rounded-md border border-current px-2 py-0.5 font-bold sm:inline-flex"
+                  class="inline-flex place-content-center place-items-center gap-2 rounded-md border border-current px-2 py-0.5 font-bold"
                 >
                   <UIcon class="size-5" name="i-lucide-keyboard" />
                   <span>Shortcuts</span>
                 </span>
 
-                Press <Kbd label="Space" /> or click on the card to flip
+                Press <Kbd label="Space" /> to flip,
+                <Kbd :icon="{ name: 'i-lucide-move-right' }" /> to move next,
+                <Kbd :icon="{ name: 'i-lucide-move-left' }" /> to skip.
               </div>
             </div>
 
+            <!-- Finished component -->
             <UEmpty
               v-else
               :actions="[
                 {
+                  to: '/home',
                   icon: 'i-lucide-house',
                   label: 'Home',
                   color: 'success' as const,
                   variant: 'subtle' as const,
-                  class: 'cursor-pointer',
-                  onClick: goToHome,
+                  class: 'cursor-pointer hover:scale-102 hover:shadow',
+                },
+                {
+                  icon: 'i-lucide-fast-forward',
+                  label: 'Ignore & continue',
+                  color: 'neutral' as const,
+                  variant: 'subtle' as const,
+                  class: 'cursor-pointer hover:scale-102 hover:shadow',
+                  onClick: ignoreNextReviewDate,
                 },
                 {
                   icon: 'i-lucide-refresh-cw',
                   label: 'Refresh progress',
-                  color: 'neutral' as const,
-                  variant: 'subtle' as const,
-                  class: 'cursor-pointer',
+                  color: 'error' as const,
+                  variant: 'outline' as const,
+                  class: 'cursor-pointer hover:scale-102 hover:shadow',
                   onClick: refreshDeckProgress,
-                },
-                {
-                  icon: 'i-lucide-fast-forward',
-                  label: 'Ignore and continue',
-                  color: 'neutral' as const,
-                  variant: 'subtle' as const,
-                  class: 'cursor-pointer',
-                  onClick: ignoreNextReviewDate,
                 },
               ]"
               variant="naked"
@@ -584,6 +598,7 @@ defineShortcuts({
             />
           </div>
 
+          <!-- Title and Description -->
           <template #title>
             <UFormField name="name">
               <UInput
@@ -621,11 +636,23 @@ defineShortcuts({
         <UPageBody class="mt-4">
           <div class="flex flex-col gap-4">
             <div class="flex place-content-between place-items-center gap-4">
-              <h2 class="text-2xl font-bold text-pretty sm:text-3xl">
-                Terms
-                <span class="text-lg font-semibold sm:text-xl"
-                  >({{ deckState.cards?.length || 0 }})</span
+              <h2
+                class="flex place-items-center gap-1 text-xl font-bold text-pretty sm:text-2xl"
+              >
+                Terms ({{ deckState.cards?.length || 0 }})
+
+                <UIcon
+                  v-if="!learnState.answers.length"
+                  class="text-success size-6"
+                  name="i-lucide-check"
+                />
+
+                <span
+                  v-else
+                  class="ml-2 place-self-end-safe text-base font-normal text-current/75 sm:text-lg"
                 >
+                  Saving...
+                </span>
               </h2>
 
               <div v-if="isEditing" class="flex gap-2 place-self-end">
