@@ -15,8 +15,11 @@ const { token, data: user } = useAuth();
 const formErrorMsg = ref('');
 const isEditing = ref(false);
 const isSaving = ref(false);
+const isAnswersSaving = ref(false);
 const cards = ref<Card[]>([]);
+
 const form = useTemplateRef('form');
+
 const deckState = reactive<Partial<DeckWithCards>>({});
 
 const deckId = computed(() => route.query.deckId as string);
@@ -318,6 +321,7 @@ function getCards(ignoreDate: boolean) {
 
             <!-- Flashcard Study -->
             <Flashcard
+              v-model:is-answers-saving="isAnswersSaving"
               :username
               :cards
               :deck="{ id: deckId, slug: deckSlug }"
@@ -415,8 +419,8 @@ function getCards(ignoreDate: boolean) {
               >
                 Terms ({{ deckState.cards?.length || 0 }})
 
-                <!-- <UIcon
-                  v-if="!savingAnswers"
+                <UIcon
+                  v-if="!isAnswersSaving"
                   class="text-success size-6"
                   name="i-lucide-check"
                 />
@@ -426,7 +430,7 @@ function getCards(ignoreDate: boolean) {
                   class="ml-2 place-self-end-safe text-base font-normal text-current/75 sm:text-lg"
                 >
                   Saving...
-                </span> -->
+                </span>
               </h2>
 
               <div v-if="isEditing" class="flex gap-2 place-self-end">
@@ -476,6 +480,7 @@ function getCards(ignoreDate: boolean) {
               <UCard
                 v-for="(c, index) in deckState.cards"
                 :key="c.id"
+                class="bg-elevated"
                 variant="subtle"
               >
                 <div

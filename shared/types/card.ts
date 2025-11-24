@@ -23,12 +23,7 @@ export type CardStatus = 'known' | 'learning' | 'new';
 
 export type Card = v.InferOutput<typeof CardSchema>;
 
-export type CardAnswer = Pick<Card, 'id' | 'streak' | 'reviewDate'>;
-
-export type CardState = {
-  streak: number;
-  reviewDate?: string;
-};
+export type CardAnswer = Required<Pick<Card, 'id' | 'streak' | 'reviewDate'>>;
 
 export type FlashcardState = {
   totalCards: number;
@@ -37,14 +32,13 @@ export type FlashcardState = {
   retryQueue: Card[];
 };
 
-export type Question = {
-  id: UUID;
+export type Question = Pick<Card, 'id' | 'streak' | 'reviewDate'> & {
   type: QuestionType;
   direction: QuestionDirection;
   question: string;
   answer: string;
-  state: CardState;
   choices?: string[];
+  correctChoiceIndex?: number;
 };
 
 export type QuestionState = {
@@ -55,6 +49,7 @@ export type QuestionState = {
 };
 
 export type QuestionSetting = {
+  showCorrectAnswer: boolean;
   direction: QuestionDirection;
   multipleChoices: boolean;
   written: boolean;

@@ -3,17 +3,20 @@ import * as v from 'valibot';
 import type { SelectMenuItem } from '@nuxt/ui';
 import { breakpointsTailwind, useBreakpoints } from '@vueuse/core';
 
-const { token, data: user } = useAuth();
+const { token } = useAuth();
 const route = useRoute();
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual('sm');
 
-const saving = ref(false);
-const ignoreDate = ref(false);
-const settingOpen = ref(false);
+const isCorrect = ref<boolean | undefined>(undefined);
+const isReviewShowing = ref(false);
+const isAnswerSaving = ref(false);
+const isIgnoreDate = ref(false);
+const isSettingOpen = ref(false);
 const correctCount = ref(0);
 const incorrectCount = ref(0);
 const userAnswer = ref('');
+const userChoiceIndex = ref<number>(-1);
 const question = ref<Question | undefined>(undefined);
 
 const directionItems = ref<SelectMenuItem[]>([
@@ -31,6 +34,8 @@ const directionItems = ref<SelectMenuItem[]>([
   },
 ]);
 
+const inputComponent = useTemplateRef('input');
+
 const learn = reactive<QuestionState>({
   totalQuestions: 0,
   queue: [],
@@ -39,6 +44,7 @@ const learn = reactive<QuestionState>({
 });
 
 const setting = reactive<QuestionSetting>({
+  showCorrectAnswer: true,
   direction: 'term_to_def',
   multipleChoices: true,
   written: false,
@@ -83,16 +89,21 @@ const {
 
 watch(deck, (newDeck) => {
   if (newDeck && newDeck.cards.length > 0) {
+    isCorrect.value = undefined;
+    isReviewShowing.value = false;
+    isAnswerSaving.value = false;
+    isIgnoreDate.value = false;
+    isSettingOpen.value = false;
     correctCount.value = 0;
     incorrectCount.value = 0;
-    settingOpen.value = false;
     userAnswer.value = '';
+    userChoiceIndex.value = -1;
 
     learn.answers = [];
     learn.retryQueue = [];
 
     learn.queue = generateQuestions(
-      getCards(newDeck.cards, ignoreDate.value),
+      getCards(newDeck.cards, isIgnoreDate.value),
       questionTypes.value,
       setting.direction,
     );
@@ -103,31 +114,65 @@ watch(deck, (newDeck) => {
 
 watchDebounced(learn, saveAnswers, {
   debounce: 1000,
-  maxWait: 3000,
   deep: true,
 });
 
-function handleAnswer(input: string, type: QuestionType) {
-  if (!question.value) return;
-  if (type === 'written' && !userAnswer.value) return;
+function onChoiceSelected(choiceIndex: number) {
+  if (!question.value || isReviewShowing.value) return;
+  if (question.value.type !== 'multiple_choices') return;
 
-  saving.value = true;
-  userAnswer.value = ''; // TODO: handle when user submit incorrect answer
+  userChoiceIndex.value = choiceIndex;
 
-  let correct = false;
-  if (type === 'multiple_choices') {
-    correct = checkMCQAnswer(input, question.value.answer);
-  } else if (type === 'written') {
-    correct = checkWrittenAnswer(input, question.value.answer);
+  isCorrect.value = choiceIndex === question.value.correctChoiceIndex;
+
+  if (isCorrect.value) {
+    isReviewShowing.value = true;
+
+    setTimeout(() => {
+      handleAnswer(isCorrect.value, question.value);
+    }, 1000);
+  } else {
+    if (setting.showCorrectAnswer) {
+      isReviewShowing.value = true;
+      return;
+    }
+
+    setTimeout(() => {
+      handleAnswer(isCorrect.value, question.value);
+    }, 1000);
   }
+}
+
+function onWrittenSubmitted(input: string) {
+  if (!question.value || isReviewShowing.value) return;
+  if (question.value.type !== 'written') return;
+
+  isCorrect.value =
+    input.trim().toLowerCase() === question.value.answer.trim().toLowerCase();
+
+  if (isCorrect.value) {
+    isReviewShowing.value = true;
+
+    handleAnswer(isCorrect.value, question.value);
+  } else {
+    if (setting.showCorrectAnswer) {
+      isReviewShowing.value = true;
+      return;
+    }
+
+    handleAnswer(isCorrect.value, question.value);
+  }
+}
+
+function handleAnswer(correct?: boolean, question?: Question) {
+  if (!question || correct === undefined) return;
+
+  isAnswerSaving.value = true;
 
   const updated = Object.assign(
     {},
-    question.value,
-    calcCardState({
-      ...question.value.state,
-      correct,
-    }),
+    question,
+    calcCardState({ ...question, correct }),
   );
 
   if (correct) {
@@ -137,7 +182,7 @@ function handleAnswer(input: string, type: QuestionType) {
     learn.retryQueue.push(updated);
   }
 
-  // trigger watchDebounced
+  // trigger saveAnswers in watchDebounced
   const index = learn.answers.findIndex((a) => a.id === updated.id);
   if (index !== -1) {
     learn.answers[index] = updated;
@@ -146,14 +191,22 @@ function handleAnswer(input: string, type: QuestionType) {
   }
 
   if (!learn.queue.length) {
-    if (!learn.retryQueue.length) {
-      question.value = undefined;
-      return;
-    }
+    if (!learn.retryQueue.length) return nextQuestion();
 
     learn.queue = learn.retryQueue;
     learn.retryQueue = [];
   }
+
+  nextQuestion();
+}
+
+function nextQuestion() {
+  isCorrect.value = undefined;
+  isReviewShowing.value = false;
+  userAnswer.value = '';
+  userChoiceIndex.value = -1;
+
+  inputComponent.value?.inputRef?.focus();
 
   question.value = learn.queue.shift();
 }
@@ -171,7 +224,7 @@ async function saveAnswers() {
     .catch((error: ErrorResponse) => {
       console.error('Save answers fail!', error.data);
     })
-    .finally(() => (saving.value = false));
+    .finally(() => (isAnswerSaving.value = false));
 }
 
 async function onRestart() {
@@ -181,35 +234,61 @@ async function onRestart() {
       Authorization: token.value || '',
     },
   }).then(async () => {
-    ignoreDate.value = false;
+    isIgnoreDate.value = false;
     await refresh();
   });
 }
 
 async function onIgnoreDate() {
-  ignoreDate.value = true;
+  isIgnoreDate.value = true;
   await refresh();
 }
 
-const throttledHandleAnswer = useThrottleFn(handleAnswer, 500);
-
 defineShortcuts({
-  enter: () => throttledHandleAnswer(userAnswer.value, 'written'),
+  ' ': () => handleAnswer(isCorrect.value, question.value),
   '1': () => {
-    const choice = question.value?.choices?.[0];
-    if (choice) throttledHandleAnswer(choice, 'multiple_choices');
+    if (
+      isCorrect.value === false &&
+      isReviewShowing.value &&
+      question.value?.correctChoiceIndex === 0
+    ) {
+      handleAnswer(isCorrect.value, question.value);
+    } else {
+      onChoiceSelected(0);
+    }
   },
   '2': () => {
-    const choice = question.value?.choices?.[1];
-    if (choice) throttledHandleAnswer(choice, 'multiple_choices');
+    if (
+      isCorrect.value === false &&
+      isReviewShowing.value &&
+      question.value?.correctChoiceIndex === 1
+    ) {
+      handleAnswer(isCorrect.value, question.value);
+    } else {
+      onChoiceSelected(1);
+    }
   },
   '3': () => {
-    const choice = question.value?.choices?.[2];
-    if (choice) throttledHandleAnswer(choice, 'multiple_choices');
+    if (
+      isCorrect.value === false &&
+      isReviewShowing.value &&
+      question.value?.correctChoiceIndex === 2
+    ) {
+      handleAnswer(isCorrect.value, question.value);
+    } else {
+      onChoiceSelected(2);
+    }
   },
   '4': () => {
-    const choice = question.value?.choices?.[3];
-    if (choice) throttledHandleAnswer(choice, 'multiple_choices');
+    if (
+      isCorrect.value === false &&
+      isReviewShowing.value &&
+      question.value?.correctChoiceIndex === 3
+    ) {
+      handleAnswer(isCorrect.value, question.value);
+    } else {
+      onChoiceSelected(3);
+    }
   },
 });
 </script>
@@ -240,19 +319,24 @@ defineShortcuts({
       </div>
 
       <div v-else-if="question" class="mb-8 flex w-full flex-col gap-2">
-        <div class="mb-2 flex place-content-center place-items-center gap-2">
-          <h1 class="text-lg font-semibold sm:text-xl">
-            {{ deck?.name || '' }}
-          </h1>
+        <h1
+          class="mb-2 flex place-items-center place-self-center text-lg font-semibold sm:text-xl"
+        >
+          {{ deck?.name || '' }}
 
           <UIcon
-            v-if="!saving"
+            v-if="!isAnswerSaving"
             name="i-lucide-check"
-            class="text-success size-5"
+            class="text-success ml-2 size-5"
           />
 
-          <span v-else class="text-base">Saving...</span>
-        </div>
+          <span
+            v-else
+            class="text-muted ml-2 place-self-end text-base font-light"
+          >
+            Saving...
+          </span>
+        </h1>
 
         <div class="flex place-content-between">
           <div class="flex place-items-center gap-2">
@@ -269,7 +353,7 @@ defineShortcuts({
           <div>{{ `${correctCount} / ${learn.totalQuestions}` }}</div>
 
           <div class="flex place-items-center gap-2">
-            <span class="text-success text-accented text-sm">Correct</span>
+            <span class="text-success text-sm">Correct</span>
 
             <UBadge
               :label="correctCount"
@@ -285,7 +369,7 @@ defineShortcuts({
             header: 'p-0 sm:px-0',
             body: 'flex-1 w-full flex flex-col gap-2 sm:gap-4 place-content-between',
           }"
-          class="flex min-h-[50dvh] flex-col divide-none shadow-md"
+          class="bg-elevated flex min-h-[50dvh] flex-col divide-none shadow-md"
         >
           <div class="flex w-full place-content-between place-items-center">
             <span class="flex place-items-center gap-1 font-semibold">
@@ -301,7 +385,7 @@ defineShortcuts({
             <UButton
               class="cursor-pointer"
               icon="i-lucide-lightbulb"
-              variant="ghost"
+              variant="soft"
               color="neutral"
             >
               Get a hint
@@ -313,13 +397,26 @@ defineShortcuts({
           </div>
 
           <div class="mt-4 flex w-full flex-col gap-2 sm:gap-4">
-            <span class="font-bold">
-              {{
-                question.type === 'multiple_choices'
-                  ? 'Choose an answer'
-                  : 'Type your answer'
-              }}
-            </span>
+            <div>
+              <span class="font-bold">
+                {{
+                  question.type === 'multiple_choices'
+                    ? 'Choose an answer'
+                    : 'Type your answer'
+                }}
+              </span>
+
+              <span
+                v-if="
+                  isReviewShowing &&
+                  !isCorrect &&
+                  setting.showCorrectAnswer &&
+                  question.type === 'written'
+                "
+              >
+                Correct answer: {{ question.answer }}
+              </span>
+            </div>
 
             <div
               v-if="question.choices"
@@ -330,18 +427,26 @@ defineShortcuts({
                 :key="index"
                 variant="outline"
                 color="neutral"
-                class="flex w-full cursor-pointer place-items-center gap-2 rounded-lg p-3 transition-all hover:scale-102 hover:shadow active:scale-95"
-                @click="throttledHandleAnswer(choice, 'multiple_choices')"
+                class="hover:text-primary hover:ring-primary/50 hover:bg-primary/10 flex w-full cursor-pointer place-items-center gap-2 rounded-lg p-3 transition-all hover:scale-103 hover:shadow active:scale-95"
+                :class="{
+                  'ring-success ring-2':
+                    isReviewShowing && index === question?.correctChoiceIndex,
+                  'ring-error ring-2':
+                    isReviewShowing &&
+                    isCorrect === false &&
+                    index === userChoiceIndex,
+                }"
+                @click="() => onChoiceSelected(index)"
+                :disabled="isReviewShowing"
               >
                 <UBadge
-                  class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full bg-inherit font-bold sm:flex"
+                  class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full font-bold text-inherit ring-inherit sm:flex"
                   variant="outline"
-                  color="neutral"
                 >
                   {{ index + 1 }}
                 </UBadge>
 
-                <span class="text-start text-lg font-medium">
+                <span class="text-start text-base font-medium sm:text-lg">
                   {{ choice }}
                 </span>
               </UButton>
@@ -352,9 +457,11 @@ defineShortcuts({
               v-model="userAnswer"
               :ui="{ base: 'text-lg sm:text-xl' }"
               class="w-full"
+              ref="input"
               variant="outline"
               placeholder="Type your answer here..."
               autofocus
+              @keydown.enter="() => onWrittenSubmitted(userAnswer)"
             />
 
             <div class="flex place-content-end place-items-center gap-4">
@@ -370,7 +477,7 @@ defineShortcuts({
                 v-if="question.type === 'written'"
                 :disabled="!userAnswer"
                 class="cursor-pointer font-medium"
-                @click="throttledHandleAnswer(userAnswer, 'written')"
+                @click="() => onWrittenSubmitted(userAnswer)"
               >
                 Answer
               </UButton>
@@ -386,8 +493,15 @@ defineShortcuts({
           </template>
         </UCard>
 
+        <span
+          v-if="isReviewShowing && !isCorrect"
+          class="hidden place-self-center sm:inline"
+        >
+          Press <Kbd label="Space" /> to continue
+        </span>
+
         <UModal
-          v-model:open="settingOpen"
+          v-model:open="isSettingOpen"
           :fullscreen="!smAndLarger"
           :ui="{
             content: 'divide-none',
@@ -402,7 +516,7 @@ defineShortcuts({
             icon="i-lucide-settings"
             variant="ghost"
             color="neutral"
-            @click="settingOpen = true"
+            @click="isSettingOpen = true"
           />
 
           <template #title>
@@ -410,7 +524,13 @@ defineShortcuts({
           </template>
 
           <template #body>
-            <div class="flex flex-col gap-2 text-base font-medium sm:text-lg">
+            <div class="flex flex-col gap-1 text-base font-medium sm:text-lg">
+              <div class="flex place-content-between place-items-center gap-2">
+                <div>Show correct answer</div>
+
+                <USwitch v-model="setting.showCorrectAnswer" size="lg" />
+              </div>
+
               <USeparator label="Question format" />
 
               <div class="flex place-content-between place-items-center gap-2">

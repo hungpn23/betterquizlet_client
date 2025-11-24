@@ -3,6 +3,8 @@ export default (
   types: QuestionType[],
   dir: QuestionDirection,
 ): Question[] => {
+  if (cards.length < 4) return [];
+
   const questions: Question[] = [];
 
   for (const card of cards) {
@@ -29,6 +31,7 @@ export default (
     }
 
     let choices: string[] | undefined;
+    let correctChoiceIndex: number | undefined;
     if (type === 'multiple_choices') {
       const result = [answer];
 
@@ -46,19 +49,19 @@ export default (
       }
 
       choices = shuffle(result);
+      correctChoiceIndex = choices.indexOf(answer);
     }
 
     questions.push({
       id: card.id,
+      streak: card.streak,
+      reviewDate: card.reviewDate,
       type,
       direction,
       question,
       answer,
       choices,
-      state: {
-        streak: card.streak,
-        reviewDate: card.reviewDate,
-      },
+      correctChoiceIndex,
     });
   }
 

@@ -18,6 +18,8 @@ const emit = defineEmits<{
   (e: 'ignore-date'): void;
 }>();
 
+const isAnswersSaving = defineModel<boolean>('is-answers-saving');
+
 const { token } = useAuth();
 
 // --- Text-to-Speech Setup ---
@@ -87,7 +89,8 @@ async function saveAnswers() {
     })
     .catch((error: ErrorResponse) => {
       console.error('Save answers fail!', error.data);
-    });
+    })
+    .finally(() => (isAnswersSaving.value = false));
 }
 
 async function restart() {
@@ -101,6 +104,8 @@ async function restart() {
 
 function handleAnswer(correct: boolean) {
   if (!flashcard.value) return;
+
+  isAnswersSaving.value = true;
 
   const updated = Object.assign(
     {},
@@ -151,8 +156,8 @@ function toggleFlip() {
   isFlipped.value = !isFlipped.value;
 }
 
-const throttledToggleFlip = useThrottleFn(toggleFlip, 50);
-const throttledHandleAnswer = useThrottleFn(handleAnswer, 50);
+const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
+const throttledHandleAnswer = useThrottleFn(handleAnswer, 300);
 
 defineShortcuts({
   ' ': throttledToggleFlip,
@@ -208,7 +213,7 @@ defineShortcuts({
           header: 'p-0 sm:px-0',
           body: 'p-2 sm:p-4 sm:pt-2 w-full flex-1 flex flex-col gap-2 sm:gap-4 place-content-between place-items-center select-none',
         }"
-        class="flex min-h-[50dvh] flex-col divide-none shadow-md"
+        class="bg-elevated flex min-h-[50dvh] flex-col divide-none shadow-md"
         variant="subtle"
         @click="throttledToggleFlip"
       >
@@ -294,7 +299,7 @@ defineShortcuts({
       </div>
 
       <div
-        class="hidden w-full place-content-center place-items-center gap-2 rounded-md p-2 text-current sm:px-4 lg:flex"
+        class="g hidden w-full place-content-center place-items-center gap-1 rounded-md p-2 text-current sm:px-4 lg:flex"
       >
         <span
           class="inline-flex place-content-center place-items-center gap-2 rounded-md border border-current px-2 py-0.5 font-bold"

@@ -480,6 +480,7 @@ async function onError(event: FormErrorEvent) {
                     <UCard
                       v-for="(c, index) in parsedCards"
                       :key="index"
+                      class="bg-elevated"
                       variant="subtle"
                     >
                       <div class="flex flex-col sm:flex-row">
@@ -547,7 +548,7 @@ async function onError(event: FormErrorEvent) {
           </div>
 
           <UCard
-            class="hover:border-primary/75 hover:text-primary border-accented flex h-28 cursor-pointer place-content-center place-items-center border-2 border-dashed text-neutral-500 transition-all select-none active:scale-95"
+            class="hover:border-primary/75 hover:text-primary/75 border-accented text-muted flex h-28 cursor-pointer place-content-center place-items-center border-2 border-dashed transition-all select-none active:scale-95"
             @click="createState.cards.unshift({ term: '', definition: '' })"
           >
             <div class="flex place-content-center place-items-center gap-2">
@@ -563,6 +564,7 @@ async function onError(event: FormErrorEvent) {
             <UCard
               v-for="(c, index) in createState.cards"
               :key="index"
+              class="bg-elevated"
               variant="subtle"
             >
               <div
@@ -615,7 +617,7 @@ async function onError(event: FormErrorEvent) {
           </TransitionGroup>
 
           <UCard
-            class="hover:border-primary/75 hover:text-primary border-accented flex h-28 cursor-pointer place-content-center place-items-center border-2 border-dashed text-neutral-500 transition-all select-none active:scale-95"
+            class="hover:border-primary/75 hover:text-primary/75 border-accented text-muted flex h-28 cursor-pointer place-content-center place-items-center border-2 border-dashed transition-all select-none active:scale-95"
             @click="createState.cards.push({ term: '', definition: '' })"
           >
             <div class="flex place-content-center place-items-center gap-2">
