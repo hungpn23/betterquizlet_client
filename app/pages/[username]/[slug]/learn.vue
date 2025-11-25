@@ -28,6 +28,7 @@ const isReviewShowing = ref(false);
 const isAnswerSaving = ref(false);
 const isIgnoreDate = ref(false);
 const isSettingOpen = ref(false);
+const isShortcutOpen = ref(false);
 const correctCount = ref(0);
 const incorrectCount = ref(0);
 const userAnswer = ref('');
@@ -46,9 +47,11 @@ const learn = reactive<QuestionState>({
 const setting = reactive<QuestionSetting>({
   showCorrectAnswer: true,
   direction: 'term_to_def',
-  multipleChoices: false,
-  written: true,
+  multipleChoices: true,
+  written: false,
 });
+
+const isIncorrect = computed(() => isCorrect.value === false);
 
 const progress = computed(() => {
   if (!learn.totalQuestions) return 0;
@@ -83,7 +86,7 @@ const userInputClass = computed(() => {
 
   if (isReviewShowing.value) className += ' ring-2';
   if (isCorrect.value) className += ' ring-success';
-  if (isCorrect.value === false) className += ' ring-error';
+  if (isIncorrect.value) className += ' ring-error';
 
   return className;
 });
@@ -136,7 +139,6 @@ function submitAnswer(userAnswer: number | string) {
     isCorrect.value = userAnswer === q.correctChoiceIndex;
   } else if (q.type === 'written' && typeof userAnswer === 'string') {
     const inputRef = inputComponent.value?.inputRef;
-    console.log('🚀 ~ submitAnswer ~ inputRef:', inputRef);
     if (inputRef) inputRef.blur();
 
     isCorrect.value =
@@ -145,14 +147,13 @@ function submitAnswer(userAnswer: number | string) {
     return;
   }
 
+  isReviewShowing.value = true;
+
   if (isCorrect.value) {
-    isReviewShowing.value = true;
     debouncedHandleAnswer(true, q);
   } else {
-    if (setting.showCorrectAnswer) {
-      isReviewShowing.value = true;
-      return;
-    }
+    if (setting.showCorrectAnswer) return;
+
     debouncedHandleAnswer(false, q);
   }
 }
@@ -309,7 +310,7 @@ defineShortcuts({
           <div class="flex place-items-center gap-2">
             <UBadge
               :label="incorrectCount"
-              class="rounded-full px-2"
+              class="h-6 w-6 shrink-0 rounded-full px-2"
               variant="subtle"
               color="error"
             />
@@ -324,7 +325,7 @@ defineShortcuts({
 
             <UBadge
               :label="correctCount"
-              class="rounded-full px-2"
+              class="h-6 w-6 shrink-0 rounded-full px-2"
               variant="subtle"
               color="success"
             />
@@ -336,7 +337,7 @@ defineShortcuts({
             header: 'p-0 sm:px-0',
             body: 'flex-1 w-full flex flex-col gap-2 sm:gap-4 place-content-between',
           }"
-          class="bg-elevated flex min-h-[50dvh] flex-col divide-none shadow-md"
+          class="bg-elevated flex min-h-[50dvh] flex-col divide-none shadow-md transition-all"
         >
           <div class="flex w-full place-content-between place-items-center">
             <span class="flex place-items-center gap-1 font-semibold">
@@ -364,27 +365,15 @@ defineShortcuts({
           </div>
 
           <div class="mt-4 flex w-full flex-col gap-2">
-            <div>
-              <span class="font-bold">
-                {{
-                  question.type === 'multiple_choices'
-                    ? 'Choose an answer'
-                    : 'Type your answer'
-                }}
-              </span>
+            <span class="font-bold">
+              {{
+                question.type === 'multiple_choices'
+                  ? 'Choose an answer'
+                  : 'Type your answer'
+              }}
+            </span>
 
-              <span
-                v-if="
-                  isReviewShowing &&
-                  !isCorrect &&
-                  setting.showCorrectAnswer &&
-                  question.type === 'written'
-                "
-              >
-                Correct answer: {{ question.answer }}
-              </span>
-            </div>
-
+            <!-- Multiple Choices Answer -->
             <div
               v-if="question.type === 'multiple_choices'"
               class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4"
@@ -394,21 +383,30 @@ defineShortcuts({
                 :key="index"
                 variant="outline"
                 color="neutral"
-                class="hover:text-primary hover:ring-primary/50 hover:bg-primary/10 flex w-full cursor-pointer place-items-center gap-2 rounded-lg p-3 transition-all hover:scale-103 hover:shadow active:scale-95"
+                class="flex w-full cursor-pointer place-items-center gap-2 rounded-lg p-3 transition-all active:scale-98 disabled:pointer-events-none"
                 :class="{
-                  'ring-2': isReviewShowing,
-                  'ring-success':
+                  'hover:text-primary hover:ring-primary/50 hover:bg-primary/10 hover:shadow':
+                    !isReviewShowing,
+                  'ring-success ring-2':
                     isReviewShowing && index === question!.correctChoiceIndex,
-                  'ring-error':
+                  'ring-default ring':
                     isReviewShowing &&
-                    isCorrect === false &&
-                    index === userChoiceIndex,
+                    !setting.showCorrectAnswer &&
+                    isIncorrect,
+                  'ring-error ring-2':
+                    isReviewShowing && isIncorrect && index === userChoiceIndex,
                 }"
-                :disabled="isReviewShowing"
-                @click="submitAnswer(index)"
+                :disabled="
+                  (isReviewShowing &&
+                    isIncorrect &&
+                    index !== question.correctChoiceIndex) ||
+                  (isReviewShowing && isCorrect) ||
+                  (isReviewShowing && !setting.showCorrectAnswer)
+                "
+                @click="handleChoiceShortcut(index)"
               >
                 <UBadge
-                  class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full font-bold text-inherit ring-inherit sm:flex"
+                  class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full font-bold text-inherit ring-inherit transition-all sm:flex"
                   variant="outline"
                 >
                   {{ index + 1 }}
@@ -420,6 +418,7 @@ defineShortcuts({
               </UButton>
             </div>
 
+            <!-- Written Answer -->
             <div v-else class="flex w-full flex-col gap-2">
               <UInput
                 v-model="userAnswer"
@@ -472,164 +471,192 @@ defineShortcuts({
           </template>
         </UCard>
 
-        <div class="flex place-items-center place-self-end">
-          <UModal
-            v-model:open="isSettingOpen"
-            :fullscreen="!smAndLarger"
-            :ui="{
-              content: 'divide-none',
-              body: 'flex-initial pt-0 sm:pt-0',
-              footer: 'place-content-end',
-            }"
-            :description="deck?.name || ''"
+        <div class="grid grid-cols-3 gap-2">
+          <div></div>
+
+          <div
+            v-if="isReviewShowing && setting.showCorrectAnswer && isIncorrect"
+            class="place-self-center font-semibold"
           >
-            <UButton
-              :size="smAndLarger ? 'xl' : 'lg'"
-              class="cursor-pointer place-self-end"
-              icon="i-lucide-keyboard"
-              variant="ghost"
-              color="neutral"
-              @click="isSettingOpen = true"
-            />
+            Press <Kbd label="Space" /> to continue
+          </div>
 
-            <template #title>
-              <h2 class="text-2xl font-semibold sm:text-3xl">Settings</h2>
-            </template>
+          <div v-else></div>
 
-            <template #body>
-              <div class="flex flex-col gap-1 text-base font-medium sm:text-lg">
-                <div
-                  class="flex place-content-between place-items-center gap-2"
-                >
-                  <div>Show correct answer</div>
-
-                  <USwitch v-model="setting.showCorrectAnswer" size="lg" />
-                </div>
-
-                <USeparator label="Question format" />
-
-                <div
-                  class="flex place-content-between place-items-center gap-2"
-                >
-                  <div>Multiple choices</div>
-
-                  <USwitch v-model="setting.multipleChoices" size="lg" />
-                </div>
-
-                <div
-                  class="flex place-content-between place-items-center gap-2"
-                >
-                  <div>Written</div>
-
-                  <USwitch v-model="setting.written" size="lg" />
-                </div>
-
-                <USeparator label="Answer format" />
-
-                <div
-                  class="flex place-content-between place-items-center gap-2"
-                >
-                  <div>Answer with</div>
-
-                  <USelect
-                    v-model="setting.direction"
-                    :items="directionItems"
-                    :ui="{ content: 'min-w-fit' }"
-                    size="lg"
-                  />
-                </div>
-              </div>
-            </template>
-
-            <template #footer>
+          <div class="flex place-items-center place-self-end">
+            <UModal
+              v-model:open="isShortcutOpen"
+              :ui="{
+                content: 'divide-none',
+                body: 'flex-initial pt-0 sm:pt-0',
+                footer: 'place-content-end',
+              }"
+            >
               <UButton
-                class="cursor-pointer"
-                label="Apply"
+                v-if="smAndLarger"
+                class="cursor-pointer place-self-end"
+                icon="i-lucide-keyboard"
+                variant="ghost"
                 color="neutral"
-                size="lg"
-                @click="async () => await refresh()"
+                size="xl"
+                @click="isShortcutOpen = true"
               />
-            </template>
-          </UModal>
 
-          <UModal
-            v-model:open="isSettingOpen"
-            :fullscreen="!smAndLarger"
-            :ui="{
-              content: 'divide-none',
-              body: 'flex-initial pt-0 sm:pt-0',
-              footer: 'place-content-end',
-            }"
-            :description="deck?.name || ''"
-          >
-            <UButton
-              :size="smAndLarger ? 'xl' : 'lg'"
-              class="cursor-pointer place-self-end"
-              icon="i-lucide-settings"
-              variant="ghost"
-              color="neutral"
-              @click="isSettingOpen = true"
-            />
+              <template #title>
+                <h2 class="text-2xl font-semibold sm:text-3xl">
+                  Keyboard Shortcuts
+                </h2>
+              </template>
 
-            <template #title>
-              <h2 class="text-2xl font-semibold sm:text-3xl">Settings</h2>
-            </template>
-
-            <template #body>
-              <div class="flex flex-col gap-1 text-base font-medium sm:text-lg">
+              <template #body>
                 <div
-                  class="flex place-content-between place-items-center gap-2"
+                  class="flex flex-col gap-2 text-base font-medium sm:text-lg"
                 >
-                  <div>Show correct answer</div>
+                  <USeparator label="Learning" />
 
-                  <USwitch v-model="setting.showCorrectAnswer" size="lg" />
+                  <div
+                    class="flex place-content-between place-items-center gap-2"
+                  >
+                    <div>Choose an answer</div>
+
+                    <div class="flex place-items-center">
+                      <Kbd label="1" />
+                      <Kbd label="2" />
+                      <Kbd label="3" />
+                      <Kbd label="4" />
+                    </div>
+                  </div>
+
+                  <div
+                    class="flex place-content-between place-items-center gap-2"
+                  >
+                    <div>Get a hint</div>
+
+                    <div class="place-items center flex">
+                      <Kbd label="Shift" />
+                      <Kbd label="/" />
+                    </div>
+                  </div>
+
+                  <div
+                    class="flex place-content-between place-items-center gap-2"
+                  >
+                    <div>Don't know</div>
+
+                    <div class="place-items center flex">
+                      <Kbd label="Shift" />
+                      <Kbd label="X" />
+                    </div>
+                  </div>
+
+                  <USeparator label="Routing" />
+
+                  <div
+                    class="flex place-content-between place-items-center gap-2"
+                  >
+                    <div>Move back</div>
+
+                    <div class="place-items center flex">
+                      <Kbd :icon="{ name: 'i-lucide-command', size: 4 }" />
+                      <Kbd :icon="{ name: 'i-lucide-move-left' }" />
+                    </div>
+                  </div>
+
+                  <div
+                    class="flex place-content-between place-items-center gap-2"
+                  >
+                    <div>Move forward</div>
+
+                    <div class="place-items center flex">
+                      <Kbd :icon="{ name: 'i-lucide-command', size: 4 }" />
+                      <Kbd :icon="{ name: 'i-lucide-move-right' }" />
+                    </div>
+                  </div>
                 </div>
+              </template>
+            </UModal>
 
-                <USeparator label="Question format" />
-
-                <div
-                  class="flex place-content-between place-items-center gap-2"
-                >
-                  <div>Multiple choices</div>
-
-                  <USwitch v-model="setting.multipleChoices" size="lg" />
-                </div>
-
-                <div
-                  class="flex place-content-between place-items-center gap-2"
-                >
-                  <div>Written</div>
-
-                  <USwitch v-model="setting.written" size="lg" />
-                </div>
-
-                <USeparator label="Answer format" />
-
-                <div
-                  class="flex place-content-between place-items-center gap-2"
-                >
-                  <div>Answer with</div>
-
-                  <USelect
-                    v-model="setting.direction"
-                    :items="directionItems"
-                    :ui="{ content: 'min-w-fit' }"
-                    size="lg"
-                  />
-                </div>
-              </div>
-            </template>
-
-            <template #footer>
+            <UModal
+              v-model:open="isSettingOpen"
+              :fullscreen="!smAndLarger"
+              :ui="{
+                content: 'divide-none',
+                body: 'flex-initial pt-0 sm:pt-0',
+                footer: 'place-content-end',
+              }"
+              :description="deck?.name || ''"
+            >
               <UButton
-                class="cursor-pointer"
-                label="Apply"
+                :size="smAndLarger ? 'xl' : 'lg'"
+                class="cursor-pointer place-self-end"
+                icon="i-lucide-settings"
+                variant="ghost"
                 color="neutral"
-                size="lg"
-                @click="async () => await refresh()"
+                @click="isSettingOpen = true"
               />
-            </template>
-          </UModal>
+
+              <template #title>
+                <h2 class="text-2xl font-semibold sm:text-3xl">Settings</h2>
+              </template>
+
+              <template #body>
+                <div
+                  class="flex flex-col gap-1 text-base font-medium sm:text-lg"
+                >
+                  <div
+                    class="flex place-content-between place-items-center gap-2"
+                  >
+                    <div>Show correct answer</div>
+
+                    <USwitch v-model="setting.showCorrectAnswer" size="lg" />
+                  </div>
+
+                  <USeparator label="Question format" />
+
+                  <div
+                    class="flex place-content-between place-items-center gap-2"
+                  >
+                    <div>Multiple choices</div>
+
+                    <USwitch v-model="setting.multipleChoices" size="lg" />
+                  </div>
+
+                  <div
+                    class="flex place-content-between place-items-center gap-2"
+                  >
+                    <div>Written</div>
+
+                    <USwitch v-model="setting.written" size="lg" />
+                  </div>
+
+                  <USeparator label="Answer format" />
+
+                  <div
+                    class="flex place-content-between place-items-center gap-2"
+                  >
+                    <div>Answer with</div>
+
+                    <USelect
+                      v-model="setting.direction"
+                      :items="directionItems"
+                      :ui="{ content: 'min-w-fit' }"
+                      size="lg"
+                    />
+                  </div>
+                </div>
+              </template>
+
+              <template #footer>
+                <UButton
+                  class="cursor-pointer"
+                  label="Apply"
+                  color="neutral"
+                  size="lg"
+                  @click="async () => await refresh()"
+                />
+              </template>
+            </UModal>
+          </div>
         </div>
       </div>
 

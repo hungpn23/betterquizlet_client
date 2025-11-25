@@ -4,7 +4,7 @@ import type { IconProps } from '@nuxt/ui';
 // Định nghĩa props
 defineProps<{
   label?: string;
-  icon?: IconProps;
+  icon?: IconProps & { size?: number };
 }>();
 </script>
 
@@ -12,7 +12,11 @@ defineProps<{
   <kbd
     class="mx-1 inline-flex h-[27px] min-w-10 place-content-center place-items-center rounded border border-b-2 border-gray-300 bg-white px-1.5 text-center text-xs font-semibold shadow-md dark:border-gray-500 dark:bg-gray-800"
   >
-    <UIcon v-if="icon?.name" :name="icon.name" class="size-5" />
+    <UIcon
+      v-if="icon?.name"
+      :class="`size-${icon.size || 5}`"
+      :name="icon.name"
+    />
 
     <span v-else class="leading-none">{{ label }}</span>
   </kbd>
