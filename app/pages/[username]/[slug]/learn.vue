@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import * as v from 'valibot';
-import { breakpointsTailwind, useBreakpoints } from '@vueuse/core';
+import { breakpointsTailwind } from '@vueuse/core';
 
 const directionItems = [
   {
@@ -21,14 +20,13 @@ const { token } = useAuth();
 const route = useRoute();
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual('sm');
-const debouncedHandleAnswer = useDebounceFn(handleAnswer, 1000);
+const debouncedHandleAnswer = useDebounceFn(handleAnswer, 1500);
 
 const isCorrect = ref<boolean | undefined>(undefined);
 const isReviewShowing = ref(false);
 const isAnswerSaving = ref(false);
 const isIgnoreDate = ref(false);
 const isSettingOpen = ref(false);
-const isShortcutOpen = ref(false);
 const correctCount = ref(0);
 const incorrectCount = ref(0);
 const userAnswer = ref('');
@@ -435,7 +433,7 @@ defineShortcuts({
               <UInput
                 v-if="isCorrect === false"
                 :ui="{
-                  base: `text-lg sm:text-xl transition-all border-2 border-success border-dashed disabled:opacity-100 disabled:cursor-not-allowed`,
+                  base: `text-lg sm:text-xl transition-all ring-2 ring-success disabled:opacity-100 disabled:cursor-not-allowed`,
                 }"
                 :default-value="question.answer"
                 disabled
@@ -484,97 +482,7 @@ defineShortcuts({
           <div v-else></div>
 
           <div class="flex place-items-center place-self-end">
-            <UModal
-              v-model:open="isShortcutOpen"
-              :ui="{
-                content: 'divide-none',
-                body: 'flex-initial pt-0 sm:pt-0',
-                footer: 'place-content-end',
-              }"
-            >
-              <UButton
-                v-if="smAndLarger"
-                class="cursor-pointer place-self-end"
-                icon="i-lucide-keyboard"
-                variant="ghost"
-                color="neutral"
-                size="xl"
-                @click="isShortcutOpen = true"
-              />
-
-              <template #title>
-                <h2 class="text-2xl font-semibold sm:text-3xl">
-                  Keyboard Shortcuts
-                </h2>
-              </template>
-
-              <template #body>
-                <div
-                  class="flex flex-col gap-2 text-base font-medium sm:text-lg"
-                >
-                  <USeparator label="Learning" />
-
-                  <div
-                    class="flex place-content-between place-items-center gap-2"
-                  >
-                    <div>Choose an answer</div>
-
-                    <div class="flex place-items-center">
-                      <Kbd label="1" />
-                      <Kbd label="2" />
-                      <Kbd label="3" />
-                      <Kbd label="4" />
-                    </div>
-                  </div>
-
-                  <div
-                    class="flex place-content-between place-items-center gap-2"
-                  >
-                    <div>Get a hint</div>
-
-                    <div class="place-items center flex">
-                      <Kbd label="Shift" />
-                      <Kbd label="/" />
-                    </div>
-                  </div>
-
-                  <div
-                    class="flex place-content-between place-items-center gap-2"
-                  >
-                    <div>Don't know</div>
-
-                    <div class="place-items center flex">
-                      <Kbd label="Shift" />
-                      <Kbd label="X" />
-                    </div>
-                  </div>
-
-                  <USeparator label="Routing" />
-
-                  <div
-                    class="flex place-content-between place-items-center gap-2"
-                  >
-                    <div>Move back</div>
-
-                    <div class="place-items center flex">
-                      <Kbd :icon="{ name: 'i-lucide-command', size: 4 }" />
-                      <Kbd :icon="{ name: 'i-lucide-move-left' }" />
-                    </div>
-                  </div>
-
-                  <div
-                    class="flex place-content-between place-items-center gap-2"
-                  >
-                    <div>Move forward</div>
-
-                    <div class="place-items center flex">
-                      <Kbd :icon="{ name: 'i-lucide-command', size: 4 }" />
-                      <Kbd :icon="{ name: 'i-lucide-move-right' }" />
-                    </div>
-                  </div>
-                </div>
-              </template>
-            </UModal>
+            <KeyboardShortcuts />
 
             <UModal
               v-model:open="isSettingOpen"
@@ -587,11 +495,11 @@ defineShortcuts({
               :description="deck?.name || ''"
             >
               <UButton
-                :size="smAndLarger ? 'xl' : 'lg'"
                 class="cursor-pointer place-self-end"
                 icon="i-lucide-settings"
                 variant="ghost"
                 color="neutral"
+                size="lg"
                 @click="isSettingOpen = true"
               />
 

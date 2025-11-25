@@ -294,23 +294,10 @@ defineShortcuts({
         </div>
 
         <div class="col-span-1 flex place-content-end place-items-center gap-2">
+          <KeyboardShortcuts />
+
           <slot name="actions-right"></slot>
         </div>
-      </div>
-
-      <div
-        class="g hidden w-full place-content-center place-items-center gap-1 rounded-md p-2 text-current sm:px-4 lg:flex"
-      >
-        <span
-          class="inline-flex place-content-center place-items-center gap-2 rounded-md border border-current px-2 py-0.5 font-bold"
-        >
-          <UIcon class="size-5" name="i-lucide-keyboard" />
-
-          <span>Shortcuts</span>
-        </span>
-        Press <Kbd label="Space" /> to flip,
-        <Kbd :icon="{ name: 'i-lucide-move-right' }" /> to move next,
-        <Kbd :icon="{ name: 'i-lucide-move-left' }" /> to skip.
       </div>
     </div>
 
