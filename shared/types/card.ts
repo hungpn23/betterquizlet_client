@@ -32,7 +32,7 @@ export type FlashcardState = {
   retryQueue: Card[];
 };
 
-export type Question = Pick<Card, 'id' | 'streak' | 'reviewDate'> & {
+export type LearnQuestion = Pick<Card, 'id' | 'streak' | 'reviewDate'> & {
   type: QuestionType;
   direction: QuestionDirection;
   question: string;
@@ -41,20 +41,33 @@ export type Question = Pick<Card, 'id' | 'streak' | 'reviewDate'> & {
   correctChoiceIndex?: number;
 };
 
-export type QuestionState = {
+export type LearnState = {
   totalQuestions: number;
-  queue: Question[];
-  retryQueue: Question[];
+  queue: LearnQuestion[];
+  retryQueue: LearnQuestion[];
   answers: CardAnswer[];
 };
 
-export type QuestionSetting = {
+export type LearnSetting = {
   showCorrectAnswer: boolean;
-  direction: QuestionDirection;
   multipleChoices: boolean;
   written: boolean;
+  direction: QuestionDirection;
 };
 
 export type QuestionType = 'multiple_choices' | 'written';
 
 export type QuestionDirection = 'term_to_def' | 'def_to_term' | 'both';
+
+export type TestQuestion = Omit<LearnQuestion, 'streak' | 'reviewDate'> & {
+  userAnswer?: string;
+  userChoiceIndex?: number;
+  isCorrect?: boolean;
+};
+
+export type TestSetting = {
+  questionAmount: number;
+  multipleChoices: boolean;
+  written: boolean;
+  direction: QuestionDirection;
+};

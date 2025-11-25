@@ -1,129 +1,153 @@
 <script setup lang="ts">
-import * as v from 'valibot';
-import { breakpointsTailwind, useBreakpoints } from '@vueuse/core';
-import type { FormSubmitEvent } from '@nuxt/ui';
+import { breakpointsTailwind } from '@vueuse/core';
+import type { TestSetting } from '~~/shared/types/card';
 
-const answerWithItems = ['Term', 'Definition', 'Both'];
-const options = [
-  { id: 1, text: 'aliquip', key: '1' },
-  { id: 2, text: 'duis fugiat nisi', key: '2' },
+const directionItems = [
   {
-    id: 3,
-    text: 'id velit dolor culpa est tempor duis veniam magna amet',
-    key: '3',
+    label: 'Term to Definition',
+    value: 'term_to_def' satisfies QuestionDirection,
   },
   {
-    id: 4,
-    text: 'cupidatat pariatur incididunt fugiat anim cupidatat',
-    key: '4',
+    label: 'Definition to Term',
+    value: 'def_to_term' satisfies QuestionDirection,
+  },
+  {
+    label: 'Both',
+    value: 'both' satisfies QuestionDirection,
   },
 ];
 
+const { token } = useAuth();
+const route = useRoute();
 const breakpoints = useBreakpoints(breakpointsTailwind);
-
 const smAndLarger = breakpoints.greaterOrEqual('sm');
 
-const settingSchema = v.object({
-  questionCount: v.pipe(v.number(), v.minValue(1), v.maxValue(49)),
-  answerWith: v.picklist(answerWithItems),
-  isTrueFalse: v.boolean(),
-  isMultipleChoice: v.boolean(),
-  isWritten: v.boolean(),
+const isReviewShowing = ref(false);
+const isSettingOpen = ref(false);
+const questions = ref<TestQuestion[]>([]);
+
+const inputComponent = useTemplateRef('input');
+
+const setting = reactive<TestSetting>({
+  questionAmount: 0,
+  multipleChoices: true,
+  written: true,
+  direction: 'term_to_def',
 });
 
-type Schema = v.InferOutput<typeof settingSchema>;
+const deckId = computed(() => route.query.deckId as string);
 
-const isOpen = ref(false);
+const deckSlug = computed(() => {
+  const slug = route.params.slug;
 
-const settingState = reactive<Schema>({
-  questionCount: 20,
-  answerWith: 'Both',
-  isTrueFalse: false,
-  isMultipleChoice: true,
-  isWritten: false,
+  return Array.isArray(slug) ? slug[0] : slug;
 });
 
-async function onSubmit(event: FormSubmitEvent<Schema>) {
-  console.log('Starting test with config:', event.data);
+const username = computed(() => {
+  const n = route.params.username;
 
-  isOpen.value = false;
-}
+  return Array.isArray(n) ? n[0] : n;
+});
 
-onMounted(() => {
-  isOpen.value = false; // temp
+const questionTypes = computed(() => {
+  const types: QuestionType[] = [];
+
+  if (setting.multipleChoices) types.push('multiple_choices');
+  if (setting.written) types.push('written');
+
+  return types;
+});
+
+const {
+  data: deck,
+  pending,
+  refresh,
+} = await useLazyFetch<DeckWithCards>(`/api/decks/${deckId.value}`, {
+  headers: { Authorization: token.value || '' },
+  server: false,
+});
+
+watch(deck, (newDeck) => {
+  if (newDeck && newDeck.cards.length > 0) {
+    isReviewShowing.value = false;
+    isSettingOpen.value = false;
+
+    if (!setting.questionAmount) setting.questionAmount = newDeck.cards.length;
+
+    questions.value = generateQuestions<TestQuestion>({
+      cards: shuffle(newDeck.cards).slice(0, setting.questionAmount),
+      types: questionTypes.value,
+      dir: setting.direction,
+      answerPool: newDeck.cards.map((c) => ({
+        id: c.id,
+        term: c.term,
+        definition: c.definition,
+      })),
+    });
+  }
+});
+
+defineShortcuts({
+  '1': () => console.log('triggered shortcut 0 !!!'),
+  '2': () => console.log('triggered shortcut 1 !!!'),
+  '3': () => console.log('triggered shortcut 2 !!!'),
+  '4': () => console.log('triggered shortcut 3 !!!'),
 });
 </script>
 
 <template>
-  <UContainer>
-    <div class="my-2 flex flex-col gap-2">
+  <ClientOnly>
+    <UContainer>
       <div class="flex place-content-between place-items-center gap-2">
         <UButton
-          to="#"
-          class="cursor-pointer px-0 text-base"
+          :to="`/${username}/${deckSlug}?deckId=${deckId}`"
+          class="mt-2 cursor-pointer px-0 text-base"
           variant="link"
           icon="i-lucide-move-left"
-          label="Back to NOTHING"
+          label="Back to Home"
         />
 
-        <div class="flex place-content-between place-items-center">
-          <UButton
-            icon="i-lucide-list"
-            variant="ghost"
-            color="neutral"
-            size="xl"
-            @click="isOpen = true"
-          />
+        <!-- Right actions -->
+        <div class="flex place-items-center place-self-end">
+          <KeyboardShortcuts />
 
           <UModal
-            v-model:open="isOpen"
+            v-model:open="isSettingOpen"
             :fullscreen="!smAndLarger"
             :ui="{
               content: 'divide-none',
-              body: 'flex-initial',
+              body: 'flex-initial pt-0 sm:pt-0',
               footer: 'place-content-end',
             }"
-            description="Some title and stuff of course"
+            :description="deck?.name || ''"
           >
             <UButton
-              :size="smAndLarger ? 'xl' : 'lg'"
+              class="cursor-pointer place-self-end"
               icon="i-lucide-settings"
               variant="ghost"
               color="neutral"
-              @click="isOpen = true"
+              size="lg"
+              @click="isSettingOpen = true"
             />
 
             <template #title>
-              <h2 class="text-2xl font-semibold sm:text-3xl">Settings</h2>
+              <h2 class="text-2xl font-semibold sm:text-3xl">
+                Let's setup your test
+              </h2>
             </template>
 
             <template #body>
-              <UForm
-                :schema="settingSchema"
-                :state="settingState"
-                id="settings"
-                class="flex flex-col gap-2 text-base font-medium sm:text-lg"
-                @submit="onSubmit"
-              >
+              <div class="flex flex-col gap-1 text-base font-medium sm:text-lg">
                 <div
                   class="flex place-content-between place-items-center gap-2"
                 >
-                  <div>
-                    Questions
+                  <div>Number of questions</div>
 
-                    <span class="text-sm text-current/50 sm:text-base">
-                      (max 49)
-                    </span>
-                  </div>
-
-                  <UFormField name="questionCount">
-                    <UInput
-                      v-model="settingState.questionCount"
-                      class="w-20"
-                      type="number"
-                      size="lg"
-                    />
-                  </UFormField>
+                  <UInput
+                    v-model.number="setting.questionAmount"
+                    type="number"
+                    size="lg"
+                  />
                 </div>
 
                 <USeparator label="Question format" />
@@ -131,24 +155,9 @@ onMounted(() => {
                 <div
                   class="flex place-content-between place-items-center gap-2"
                 >
-                  <div>True/False</div>
-
-                  <UFormField name="isTrueFalse">
-                    <USwitch v-model="settingState.isTrueFalse" size="lg" />
-                  </UFormField>
-                </div>
-
-                <div
-                  class="flex place-content-between place-items-center gap-2"
-                >
                   <div>Multiple choices</div>
 
-                  <UFormField name="isMultipleChoice">
-                    <USwitch
-                      v-model="settingState.isMultipleChoice"
-                      size="lg"
-                    />
-                  </UFormField>
+                  <USwitch v-model="setting.multipleChoices" size="lg" />
                 </div>
 
                 <div
@@ -156,9 +165,7 @@ onMounted(() => {
                 >
                   <div>Written</div>
 
-                  <UFormField name="isWritten">
-                    <USwitch v-model="settingState.isWritten" size="lg" />
-                  </UFormField>
+                  <USwitch v-model="setting.written" size="lg" />
                 </div>
 
                 <USeparator label="Answer format" />
@@ -168,153 +175,204 @@ onMounted(() => {
                 >
                   <div>Answer with</div>
 
-                  <UFormField name="answerWith">
-                    <USelect
-                      v-model="settingState.answerWith"
-                      :items="answerWithItems"
-                      :ui="{ content: 'min-w-fit' }"
-                      size="lg"
-                    />
-                  </UFormField>
+                  <USelect
+                    v-model="setting.direction"
+                    :items="directionItems"
+                    :ui="{ content: 'min-w-fit' }"
+                    size="lg"
+                  />
                 </div>
-
-                <div
-                  class="flex place-content-between place-items-center gap-2"
-                >
-                  <div>Grading options</div>
-
-                  <UFormField name="answerWith">
-                    <USelect
-                      v-model="settingState.answerWith"
-                      :items="answerWithItems"
-                      :ui="{ content: 'min-w-fit' }"
-                      size="lg"
-                      disabled
-                    />
-                  </UFormField>
-                </div>
-              </UForm>
+              </div>
             </template>
 
             <template #footer>
               <UButton
-                label="Cancel"
-                color="neutral"
-                variant="outline"
-                size="lg"
-                @click="isOpen = false"
-              />
-
-              <UButton
-                type="submit"
-                form="settings"
-                label="Submit"
+                class="cursor-pointer"
+                label="Apply"
                 color="neutral"
                 size="lg"
+                @click="async () => await refresh()"
               />
             </template>
           </UModal>
-
-          <UButton
-            :size="smAndLarger ? 'xl' : 'lg'"
-            icon="i-lucide-house"
-            variant="ghost"
-            color="neutral"
-            @click="isOpen = true"
-          />
         </div>
       </div>
 
-      <h1 class="place-self-center text-lg font-semibold sm:text-xl">
-        Some title and stuff of course
-      </h1>
+      <div v-if="pending" class="flex justify-center p-10">
+        <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin" />
+      </div>
 
-      <div class="flex flex-col gap-4">
-        <UCard
-          :ui="{
-            body: 'p-2 sm:p-4 w-full flex flex-col gap-2 sm:gap-4 place-content-between',
-          }"
-          class="flex min-h-[50dvh] shadow-md"
-          variant="outline"
+      <div v-else-if="questions.length" class="mb-8 flex w-full flex-col gap-2">
+        <h1
+          class="mb-2 flex place-items-center place-self-center text-lg font-semibold sm:text-xl"
         >
-          <UBadge
-            class="place-self-end"
-            label="1 of 20"
-            variant="outline"
-            color="neutral"
-          />
+          {{ deck?.name || '' }}
+        </h1>
 
-          <div class="text-xl font-medium sm:text-2xl">Ability</div>
+        <UCard
+          v-for="(q, index) in questions"
+          :key="q.id"
+          :ui="{
+            header: 'p-0 sm:px-0',
+            body: `flex-1 w-full flex flex-col gap-4 sm:gap-4 place-content-between p-2`,
+          }"
+          class="bg-elevated mb-2 flex min-h-[50dvh] flex-col divide-none shadow-md transition-all sm:mb-4"
+        >
+          <div class="flex w-full place-content-between place-items-center">
+            <span class="flex place-items-center gap-1 font-semibold">
+              <UButton
+                class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2"
+                icon="i-lucide-volume-2"
+                variant="soft"
+                color="neutral"
+                tabindex="-1"
+              />
+              Term
+            </span>
+
+            <UBadge
+              :label="`${index + 1} of ${questions.length}`"
+              variant="subtle"
+              color="neutral"
+            />
+          </div>
+
+          <div class="text-xl font-medium sm:text-2xl">
+            {{ q.question }}
+          </div>
 
           <div class="mt-2 flex w-full flex-col gap-2">
-            <span class="font-bold">Choose your answer</span>
+            <span class="font-bold">
+              {{
+                q.type === 'multiple_choices'
+                  ? 'Choose an answer'
+                  : 'Type your answer'
+              }}
+            </span>
 
-            <div class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4">
+            <!-- Multiple Choices Answer -->
+            <div
+              v-if="q.type === 'multiple_choices'"
+              class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4"
+            >
               <UButton
-                v-for="(opt, index) in options"
-                :key="opt.id"
+                v-for="(choice, index) in q.choices"
+                :key="index"
                 variant="outline"
                 color="neutral"
-                class="flex w-full cursor-pointer place-items-center gap-2 rounded-lg p-3 transition-all hover:scale-102 hover:shadow active:scale-95"
+                class="flex w-full cursor-pointer place-items-center gap-2 rounded-lg p-3 transition-all active:scale-98 disabled:pointer-events-none"
+                :class="{
+                  'hover:text-primary hover:ring-primary/50 hover:bg-primary/10 hover:shadow':
+                    !isReviewShowing,
+                  'ring-success ring-2':
+                    isReviewShowing && index === q!.correctChoiceIndex,
+                  'ring-default ring': isReviewShowing && !q.isCorrect,
+                  'ring-error ring-2':
+                    isReviewShowing &&
+                    !q.isCorrect &&
+                    index === q.userChoiceIndex,
+                }"
+                :disabled="
+                  (isReviewShowing &&
+                    !q.isCorrect &&
+                    index !== q.correctChoiceIndex) ||
+                  (isReviewShowing && q.isCorrect)
+                "
+                @click="console.log('clicked choice', index)"
               >
-                <UButton
-                  class="hover:none hidden h-8 w-8 place-content-center place-items-center rounded-full font-bold sm:flex"
-                  variant="subtle"
-                  color="neutral"
-                  >{{ index + 1 }}</UButton
+                <UBadge
+                  class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full font-bold text-inherit ring-inherit transition-all sm:flex"
+                  variant="outline"
                 >
+                  {{ index + 1 }}
+                </UBadge>
 
-                <span class="text-start text-lg font-medium">
-                  {{ opt.text }}
+                <span class="text-start text-base font-medium sm:text-lg">
+                  {{ choice }}
                 </span>
               </UButton>
             </div>
 
-            <UButton
-              class="cursor-pointer place-self-end font-medium"
-              variant="ghost"
-            >
-              Skip
-            </UButton>
-          </div>
-        </UCard>
+            <!-- Written Answer -->
+            <div v-else class="flex w-full flex-col gap-2">
+              <UInput
+                v-model="q.userAnswer"
+                :ui="{
+                  base: `text-lg sm:text-xl transition-all`,
+                }"
+                ref="input"
+                variant="outline"
+                color="neutral"
+                autofocus
+                @keydown.enter="console.log('submitted answer', q.userAnswer)"
+              />
 
-        <UCard
-          :ui="{
-            body: 'w-full p-2 sm:p-4 flex flex-col gap-2 sm:gap-4 place-content-between',
-          }"
-          class="flex min-h-[50dvh] shadow-md"
-          variant="outline"
-        >
-          <UBadge
-            class="place-self-end"
-            label="1 of 20"
-            variant="outline"
-            color="neutral"
-          />
+              <UInput
+                v-if="q.isCorrect === false"
+                :ui="{
+                  base: `text-lg sm:text-xl transition-all ring-2 ring-success disabled:opacity-100 disabled:cursor-not-allowed`,
+                }"
+                :default-value="q.answer"
+                disabled
+              />
+            </div>
 
-          <div class="text-xl font-medium sm:text-2xl">
-            Ability to understand spoken words, sentences, and conversations.
-          </div>
+            <div class="flex place-content-end place-items-center gap-2">
+              <UButton
+                class="cursor-pointer place-self-end font-medium"
+                variant="ghost"
+                tabindex="-1"
+              >
+                Don't know?
+              </UButton>
 
-          <div class="mt-2 flex w-full flex-col gap-2">
-            <span class="font-bold">Write your answer</span>
-
-            <UInput
-              :ui="{ base: 'text-lg sm:text-xl' }"
-              class="w-full"
-              variant="outline"
-            />
-
-            <UButton
-              class="cursor-pointer place-self-end font-medium"
-              variant="ghost"
-            >
-              Skip
-            </UButton>
+              <UButton
+                v-if="q.type === 'written'"
+                :disabled="!q.userAnswer"
+                class="cursor-pointer font-medium"
+                @click="console.log('submitted answer', q.userAnswer)"
+              >
+                Answer
+              </UButton>
+            </div>
           </div>
         </UCard>
       </div>
-    </div>
-  </UContainer>
+
+      <UEmpty
+        v-else
+        :actions="[
+          {
+            to: '/home',
+            icon: 'i-lucide-house',
+            label: 'Home',
+            color: 'success',
+            variant: 'subtle',
+            class: 'cursor-pointer hover:scale-102 hover:shadow',
+          },
+          {
+            icon: 'i-lucide-refresh-cw',
+            label: 'Restart',
+            color: 'error',
+            variant: 'outline',
+            class: 'cursor-pointer hover:scale-102 hover:shadow',
+            onClick: () => console.log('restart test'),
+          },
+          {
+            icon: 'i-lucide-fast-forward',
+            label: 'Ignore & continue',
+            color: 'neutral',
+            variant: 'subtle',
+            class: 'cursor-pointer hover:scale-102 hover:shadow',
+            onClick: () => console.log('ignore and continue'),
+          },
+        ]"
+        variant="naked"
+        icon="i-lucide-party-popper"
+        title="You're all caught up — nothing to review now."
+        description="Optimize your retention by strictly adhering to the next review date."
+        size="xl"
+      />
+    </UContainer>
+  </ClientOnly>
 </template>

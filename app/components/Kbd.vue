@@ -3,7 +3,7 @@ import type { IconProps } from '@nuxt/ui';
 
 // Định nghĩa props
 defineProps<{
-  label?: string;
+  label?: string | number;
   icon?: IconProps & { size?: number };
 }>();
 </script>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from '@vueuse/core';
+import type { LearnSetting, LearnState } from '~~/shared/types/card';
 
 const directionItems = [
   {
@@ -20,7 +21,7 @@ const { token } = useAuth();
 const route = useRoute();
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual('sm');
-const debouncedHandleAnswer = useDebounceFn(handleAnswer, 1500);
+const debouncedHandleAnswer = useDebounceFn(handleAnswer, 500);
 
 const isCorrect = ref<boolean | undefined>(undefined);
 const isReviewShowing = ref(false);
@@ -35,14 +36,14 @@ const question = ref<Question | undefined>(undefined);
 
 const inputComponent = useTemplateRef('input');
 
-const learn = reactive<QuestionState>({
+const learn = reactive<LearnState>({
   totalQuestions: 0,
   queue: [],
   retryQueue: [],
   answers: [],
 });
 
-const setting = reactive<QuestionSetting>({
+const setting = reactive<LearnSetting>({
   showCorrectAnswer: true,
   direction: 'term_to_def',
   multipleChoices: true,
@@ -113,11 +114,16 @@ watch(deck, (newDeck) => {
     learn.answers = [];
     learn.retryQueue = [];
 
-    learn.queue = generateQuestions(
-      getCards(newDeck.cards, isIgnoreDate.value),
-      questionTypes.value,
-      setting.direction,
-    );
+    learn.queue = generateQuestions<Question>({
+      cards: getCards(newDeck.cards, isIgnoreDate.value),
+      types: questionTypes.value,
+      dir: setting.direction,
+      answerPool: newDeck.cards.map((c) => ({
+        id: c.id,
+        term: c.term,
+        definition: c.definition,
+      })),
+    });
     learn.totalQuestions = learn.queue.length;
     question.value = learn.queue.shift();
   }
@@ -333,9 +339,12 @@ defineShortcuts({
         <UCard
           :ui="{
             header: 'p-0 sm:px-0',
-            body: 'flex-1 w-full flex flex-col gap-2 sm:gap-4 place-content-between',
+            body: `flex-1 w-full flex flex-col gap-4 sm:gap-4 place-content-between p-2`,
           }"
           class="bg-elevated flex min-h-[50dvh] flex-col divide-none shadow-md transition-all"
+          :class="{
+            'bg-inherit p-0 ring-0': !smAndLarger,
+          }"
         >
           <div class="flex w-full place-content-between place-items-center">
             <span class="flex place-items-center gap-1 font-semibold">
@@ -351,7 +360,7 @@ defineShortcuts({
             <UButton
               class="cursor-pointer"
               icon="i-lucide-lightbulb"
-              variant="soft"
+              :variant="smAndLarger ? 'soft' : 'ghost'"
               color="neutral"
             >
               Get a hint
@@ -362,7 +371,7 @@ defineShortcuts({
             {{ question.question }}
           </div>
 
-          <div class="mt-4 flex w-full flex-col gap-2">
+          <div class="mt-2 flex w-full flex-col gap-2">
             <span class="font-bold">
               {{
                 question.type === 'multiple_choices'
@@ -476,7 +485,12 @@ defineShortcuts({
             v-if="isReviewShowing && setting.showCorrectAnswer && isIncorrect"
             class="place-self-center font-semibold"
           >
-            Press <Kbd label="Space" /> to continue
+            Press <Kbd label="Space" />
+            <span v-if="question.correctChoiceIndex">
+              or
+              <Kbd :label="question.correctChoiceIndex + 1" />
+            </span>
+            to continue
           </div>
 
           <div v-else></div>

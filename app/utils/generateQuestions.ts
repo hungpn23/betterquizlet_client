@@ -1,11 +1,13 @@
-export default (
-  cards: Card[],
-  types: QuestionType[],
-  dir: QuestionDirection,
-): Question[] => {
-  if (cards.length < 4) return [];
+export default <T extends Question | TestQuestion>(options: {
+  cards: Card[];
+  types: QuestionType[];
+  dir: QuestionDirection;
+  answerPool: Pick<Card, 'id' | 'term' | 'definition'>[];
+}): T[] => {
+  const { cards, types, dir, answerPool } = options;
+  if (answerPool.length < 4) return [];
 
-  const questions: Question[] = [];
+  const questions: T[] = [];
 
   for (const card of cards) {
     const random = Math.random();
@@ -35,17 +37,14 @@ export default (
     if (type === 'multiple_choices') {
       const result = [answer];
 
-      const others = cards.filter((c) => c.id !== card.id);
-      const shuffledOthers = shuffle(others);
+      const wrongAnswers = shuffle(answerPool.filter((c) => c.id !== card.id));
 
       for (let i = 0; i < 3; i++) {
-        const distractor = shuffledOthers[i]!;
+        const wrongAnswer = isTermToDef
+          ? wrongAnswers[i]!.definition
+          : wrongAnswers[i]!.term;
 
-        const distractorAnswer = isTermToDef
-          ? distractor.definition
-          : distractor.term;
-
-        result.push(distractorAnswer);
+        result.push(wrongAnswer);
       }
 
       choices = shuffle(result);
@@ -62,7 +61,7 @@ export default (
       answer,
       choices,
       correctChoiceIndex,
-    });
+    } as T);
   }
 
   return questions;
