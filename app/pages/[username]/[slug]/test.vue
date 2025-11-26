@@ -36,6 +36,12 @@ const username = computed(() => {
   return Array.isArray(n) ? n[0] : n;
 });
 
+const currentCardElement = computed(() => {
+  return cardRefs.value
+    ? cardRefs.value[currentCardIndex.value]?.$el
+    : undefined;
+}) as ComputedRef<Element | undefined>;
+
 const {
   data: deck,
   pending,
@@ -68,24 +74,20 @@ watch(deck, (newDeck) => {
 
 async function onSettingApply() {
   isSettingOpen.value = false;
-
   await refresh();
-
-  if (cardRefs.value) {
-    scrollAndFocus(cardRefs.value[0]?.$el);
-  }
+  scrollAndFocus();
 }
 
-function scrollAndFocus(el?: Element) {
-  if (el) {
-    el.scrollIntoView({
+function scrollAndFocus() {
+  if (currentCardElement.value) {
+    currentCardElement.value.scrollIntoView({
       behavior: 'smooth',
       block: 'center',
     });
 
     if (currentInput.value) currentInput.value.blur();
 
-    const newInput = el.querySelector('input');
+    const newInput = currentCardElement.value.querySelector('input');
     if (newInput) {
       currentInput.value = newInput;
       setTimeout(() => newInput.focus(), 300);
@@ -95,21 +97,19 @@ function scrollAndFocus(el?: Element) {
   }
 }
 
-function handleChangeQuestion(dir: 'left' | 'right', currentIndex: number) {
+function handleChangeQuestion(dir: 'left' | 'right') {
   if (!cardRefs.value || !cardRefs.value.length) return;
 
-  let i = currentIndex;
-  if (dir === 'left' && i > 0) {
-    i--;
-
-    scrollAndFocus(cardRefs.value[i]?.$el);
-  } else if (dir === 'right' && i < cardRefs.value.length - 1) {
-    i++;
-
-    scrollAndFocus(cardRefs.value[i]?.$el);
+  if (dir === 'left' && currentCardIndex.value > 0) {
+    currentCardIndex.value--;
+  } else if (
+    dir === 'right' &&
+    currentCardIndex.value < cardRefs.value.length - 1
+  ) {
+    currentCardIndex.value++;
   }
 
-  currentCardIndex.value = i;
+  scrollAndFocus();
 }
 
 defineShortcuts({
@@ -119,12 +119,12 @@ defineShortcuts({
   '4': () => console.log('triggered shortcut 3 !!!'),
 
   arrowleft: {
-    handler: () => handleChangeQuestion('left', currentCardIndex.value),
+    handler: () => handleChangeQuestion('left'),
     usingInput: true,
   },
 
   arrowright: {
-    handler: () => handleChangeQuestion('right', currentCardIndex.value),
+    handler: () => handleChangeQuestion('right'),
     usingInput: true,
   },
 });
