@@ -109,7 +109,7 @@ watch(
   deck,
   (newDeck) => {
     resetFormState(newDeck);
-    cards.value = getCards(false);
+    cards.value = getCards(deck.value?.cards || [], false);
   },
   {
     immediate: true,
@@ -184,7 +184,7 @@ async function onError(event: FormErrorEvent) {
 async function onIgnoreDate() {
   await refreshData();
 
-  cards.value = getCards(true);
+  cards.value = getCards(deck.value?.cards || [], true);
 }
 
 function onAnswersSaved(answers: CardAnswer[]) {
@@ -266,22 +266,12 @@ function addCardLast() {
 function deleteCard(cardId?: UUID) {
   deckState.cards = deckState.cards?.filter((c) => c.id !== cardId);
 }
-
-function getCards(ignoreDate: boolean) {
-  if (!deck.value) return [];
-
-  return ignoreDate
-    ? deck.value.cards
-    : deck.value.cards.filter(
-        (c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
-      );
-}
 </script>
 
 <template>
   <SkeletonDeckDetailPage v-if="status === 'pending' || status === 'idle'" />
 
-  <UPage v-else>
+  <LazyUPage v-else>
     <UContainer>
       <UButton
         to="/home"
@@ -447,7 +437,6 @@ function getCards(ignoreDate: boolean) {
                   :loading="isSaving"
                   :label="isSaving ? 'Saving...' : 'Save Changes'"
                   class="cursor-pointer"
-                  color="primary"
                   icon="i-lucide-save"
                   loading-icon="i-lucide-loader-circle"
                   type="submit"
@@ -594,7 +583,7 @@ function getCards(ignoreDate: boolean) {
         </UPageBody>
       </UForm>
     </UContainer>
-  </UPage>
+  </LazyUPage>
 </template>
 
 <style scoped></style>

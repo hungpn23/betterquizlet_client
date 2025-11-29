@@ -44,7 +44,7 @@ const schema = v.object({
   name: v.pipe(v.string(), v.minLength(1, 'Name is required')),
   description: v.string(),
   visibility: v.enum(Visibility),
-  passcode: v.optional(
+  passcode: v.nullish(
     v.pipe(
       v.string(),
       v.minLength(4, 'Passcode must be at least 4 characters'),
@@ -76,7 +76,7 @@ const createState = reactive<Schema>({
   name: '',
   description: '',
   visibility: Visibility.PUBLIC,
-  passcode: undefined,
+  passcode: null,
   cards: [],
 });
 

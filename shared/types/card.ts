@@ -9,7 +9,7 @@ export const CardSchema = v.object({
   term: v.pipe(v.string(), v.minLength(1, 'Term is required')),
   definition: v.pipe(v.string(), v.minLength(1, 'Definition is required')),
   streak: v.pipe(v.number(), v.minValue(0, 'Streak cannot be negative')),
-  reviewDate: v.optional(
+  reviewDate: v.nullish(
     v.pipe(
       v.string(),
       v.minLength(1, 'Review date is required'),

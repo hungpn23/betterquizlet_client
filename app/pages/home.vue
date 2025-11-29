@@ -31,6 +31,7 @@ const defaults: DeckUrlParams = {
 } as const;
 
 const toast = useToast();
+const router = useRouter();
 const { token, data: user } = useAuth();
 const urlParams = useUrlSearchParams<Partial<DeckUrlParams>>('history');
 
@@ -132,12 +133,11 @@ const {
   data: paginated,
   error,
   pending,
-} = await useLazyFetch<Paginated<Deck>, ErrorResponse>('/api/decks', {
+} = useLazyFetch<Paginated<Deck>, ErrorResponse>('/api/decks', {
   query,
   headers: {
     Authorization: token.value || '',
   },
-  server: false,
 });
 
 watch(
@@ -157,7 +157,7 @@ watch(
 <template>
   <SkeletonHome v-if="pending" />
 
-  <UPage>
+  <LazyUPage>
     <UContainer>
       <UPageHeader
         :title="`Welcome back, ${user?.username}!`"
@@ -216,28 +216,28 @@ watch(
 
         <UPageList class="gap-2 sm:gap-4" divide>
           <TransitionGroup name="list" appear>
-            <UPageCard
+            <UCard
               v-for="deck in paginated?.data || []"
               :key="deck.id"
-              :to="`/${user?.username}/${deck.slug}?deckId=${deck.id}`"
               class="shadow-md"
               variant="subtle"
+              @click="
+                router.push(`/${user?.username}/${deck.slug}?deckId=${deck.id}`)
+              "
             >
-              <div
-                class="flex flex-col place-content-start place-items-start gap-1 sm:flex-row sm:place-content-between"
-              >
+              <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <div class="flex place-items-center gap-1.5">
-                  <h4 class="truncate font-medium sm:text-lg">
+                  <h4 class="max-w-5/6 truncate font-medium sm:text-lg">
                     {{ deck.name }}
                   </h4>
 
                   <UIcon
                     :name="getVisibilityIcon(deck.visibility)"
-                    class="size-5"
+                    class="shrink-0 sm:size-5"
                   />
                 </div>
 
-                <div class="text-muted text-end text-sm">
+                <div class="text-muted text-start text-sm sm:text-end">
                   {{
                     deck.openedAt
                       ? `Last opened ${formatTimeAgo(new Date(deck.openedAt))}`
@@ -247,7 +247,7 @@ watch(
               </div>
 
               <UProgress :model-value="50" class="mt-4" />
-            </UPageCard>
+            </UCard>
           </TransitionGroup>
         </UPageList>
 
@@ -264,7 +264,7 @@ watch(
         />
       </UPageBody>
     </UContainer>
-  </UPage>
+  </LazyUPage>
 </template>
 
 <style scoped></style>

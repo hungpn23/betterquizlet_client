@@ -1,8 +1,8 @@
-import { Visibility } from '~/utils/enums.ts';
 import type { UUID } from './branded';
 import type { PaginationQuery } from './pagination';
-import { CardSchema, type Card } from './card';
+import { CardSchema } from './card';
 import * as v from 'valibot';
+import type { Visibility } from '~/utils/enums';
 
 export const DeckWithCardsSchema = v.object({
   name: v.pipe(v.string(), v.minLength(1, 'Name is required')),

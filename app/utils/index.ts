@@ -49,7 +49,7 @@ export const getCardSeparator = (value: CardSeparator, custom: string = '') => {
   }
 };
 
-export const getCardStatus = (reviewDate?: string): CardStatus => {
+export const getCardStatus = (reviewDate?: string | null): CardStatus => {
   const now = Date.now();
 
   if (!reviewDate) {
