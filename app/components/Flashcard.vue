@@ -7,7 +7,6 @@ type Props = {
     slug?: string;
   };
   cards: Card[];
-  pending: boolean;
 };
 
 const props = defineProps<Partial<Props>>();
@@ -163,11 +162,7 @@ defineShortcuts({
   <div>
     <slot name="routes"></slot>
 
-    <div v-if="pending" class="flex justify-center p-10">
-      <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin" />
-    </div>
-
-    <div v-else-if="flashcard" class="flex w-full flex-col gap-2">
+    <div v-if="flashcard" class="flex w-full flex-col gap-2">
       <h1
         v-if="title"
         class="mb-2 place-self-center text-lg font-semibold sm:text-xl"

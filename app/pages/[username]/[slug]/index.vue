@@ -271,7 +271,7 @@ function deleteCard(cardId?: UUID) {
 <template>
   <SkeletonDeckDetailPage v-if="status === 'pending' || status === 'idle'" />
 
-  <LazyUPage v-else>
+  <UPage v-else>
     <UContainer>
       <UButton
         to="/home"
@@ -583,7 +583,7 @@ function deleteCard(cardId?: UUID) {
         </UPageBody>
       </UForm>
     </UContainer>
-  </LazyUPage>
+  </UPage>
 </template>
 
 <style scoped></style>

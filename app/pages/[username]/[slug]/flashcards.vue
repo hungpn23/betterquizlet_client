@@ -21,10 +21,11 @@ const username = computed(() => {
 
 const {
   data: deck,
-  pending,
+  status,
   refresh,
 } = useLazyFetch<DeckWithCards>(`/api/decks/${deckId.value}`, {
   headers: { Authorization: token.value || '' },
+  server: false,
 });
 
 watch(deck, (newDeck) => {
@@ -43,11 +44,12 @@ async function onRestarted() {
 </script>
 
 <template>
-  <UContainer>
+  <SkeletonFlashcardsPage v-if="status === 'idle' || status === 'pending'" />
+
+  <UContainer v-else>
     <Flashcard
       :username
       :cards
-      :pending
       :title="deck?.name"
       :deck="{ id: deckId, slug: deckSlug }"
       routing

@@ -50,10 +50,11 @@ const username = computed(() => {
 
 const {
   data: deck,
-  pending,
+  status,
   refresh,
 } = useLazyFetch<DeckWithCards>(`/api/decks/${deckId.value}`, {
   headers: { Authorization: token.value || '' },
+  server: false,
 });
 
 watch(deck, (newDeck) => {
@@ -221,7 +222,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <UContainer>
+  <SkeletonTestPage v-if="status === 'idle' || status === 'pending'" />
+
+  <UContainer v-else>
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
         :to="`/${username}/${deckSlug}?deckId=${deckId}`"
@@ -313,13 +316,9 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-if="pending" class="flex justify-center p-10">
-      <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin" />
-    </div>
-
-    <div v-else-if="questions.length" class="mb-8 flex w-full flex-col gap-2">
+    <div v-if="questions.length" class="mb-8 flex w-full flex-col gap-2">
       <h1
-        class="mb-2 flex place-items-center place-self-center text-lg font-semibold sm:text-xl"
+        class="mb-2 max-w-5/6 place-self-center truncate text-lg font-semibold sm:text-xl"
       >
         {{ deck?.name || '' }}
       </h1>

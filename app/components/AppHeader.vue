@@ -91,36 +91,38 @@ defineShortcuts({
       </div>
 
       <div v-else class="flex place-content-between place-items-center gap-1.5">
-        <UInput
-          v-if="smAndLarger"
-          icon="i-lucide-search"
-          variant="outline"
-          color="neutral"
-          placeholder="Search everything..."
-        />
-
-        <UButton
-          v-else
-          icon="i-lucide-search"
-          variant="ghost"
-          color="neutral"
-        />
-
-        <KeyboardShortcuts v-if="smAndLarger" />
-
-        <UColorModeButton v-if="smAndLarger" />
-
-        <UChip inset>
-          <UButton icon="i-lucide-bell" variant="ghost" color="neutral" />
-        </UChip>
-
-        <UDropdownMenu :items="avatarItems" :content="{ align: 'start' }">
-          <UAvatar
-            class="squircle rounded-none"
-            :src="data?.avatarUrl || ''"
-            icon="i-lucide-image"
+        <ClientOnly>
+          <UInput
+            v-if="smAndLarger"
+            icon="i-lucide-search"
+            variant="outline"
+            color="neutral"
+            placeholder="Search everything..."
           />
-        </UDropdownMenu>
+
+          <UButton
+            v-else
+            icon="i-lucide-search"
+            variant="ghost"
+            color="neutral"
+          />
+
+          <KeyboardShortcuts v-if="smAndLarger" />
+
+          <UColorModeButton v-if="smAndLarger" />
+
+          <UChip inset>
+            <UButton icon="i-lucide-bell" variant="ghost" color="neutral" />
+          </UChip>
+
+          <UDropdownMenu :items="avatarItems" :content="{ align: 'start' }">
+            <UAvatar
+              class="squircle rounded-none"
+              :src="data?.avatarUrl || ''"
+              icon="i-lucide-image"
+            />
+          </UDropdownMenu>
+        </ClientOnly>
       </div>
     </template>
 

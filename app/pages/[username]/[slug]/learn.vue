@@ -63,10 +63,11 @@ const username = computed(() => {
 
 const {
   data: deck,
-  pending,
+  status,
   refresh,
 } = useLazyFetch<DeckWithCards>(`/api/decks/${deckId.value}`, {
   headers: { Authorization: token.value || '' },
+  server: false,
 });
 
 watch(deck, (newDeck) => {
@@ -305,7 +306,9 @@ defineShortcuts({
 </script>
 
 <template>
-  <UContainer>
+  <SkeletonLearnPage v-if="status === 'idle' || status === 'pending'" />
+
+  <UContainer v-else>
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
         :to="`/${username}/${deckSlug}/flashcards?deckId=${deckId}`"
@@ -324,11 +327,7 @@ defineShortcuts({
       />
     </div>
 
-    <div v-if="pending" class="flex justify-center p-10">
-      <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin" />
-    </div>
-
-    <div v-else-if="question" class="mb-8 flex w-full flex-col gap-2">
+    <div v-if="question" class="mb-8 flex w-full flex-col gap-2">
       <h1
         class="mb-2 flex place-items-center place-self-center text-lg font-semibold sm:text-xl"
       >

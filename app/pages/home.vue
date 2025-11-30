@@ -132,12 +132,13 @@ const totalRecords = computed(
 const {
   data: paginated,
   error,
-  pending,
+  status,
 } = useLazyFetch<Paginated<Deck>, ErrorResponse>('/api/decks', {
   query,
   headers: {
     Authorization: token.value || '',
   },
+  server: false,
 });
 
 watch(
@@ -155,9 +156,9 @@ watch(
 </script>
 
 <template>
-  <SkeletonHome v-if="pending" />
+  <SkeletonHomePage v-if="status === 'idle' || status === 'pending'" />
 
-  <LazyUPage>
+  <UPage>
     <UContainer>
       <UPageHeader
         :title="`Welcome back, ${user?.username}!`"
@@ -195,7 +196,7 @@ watch(
             </h2>
 
             <UButton
-              class="cursor-pointer"
+              class="cursor-pointer transition-all hover:scale-103"
               label="Add a new deck"
               icon="i-lucide-plus"
               to="/create-deck"
@@ -219,7 +220,7 @@ watch(
             <UCard
               v-for="deck in paginated?.data || []"
               :key="deck.id"
-              class="shadow-md"
+              class="hover:bg-elevated cursor-pointer shadow-md transition-all hover:scale-101"
               variant="subtle"
               @click="
                 router.push(`/${user?.username}/${deck.slug}?deckId=${deck.id}`)
@@ -264,7 +265,7 @@ watch(
         />
       </UPageBody>
     </UContainer>
-  </LazyUPage>
+  </UPage>
 </template>
 
 <style scoped></style>
