@@ -424,8 +424,8 @@ defineShortcuts({
           >
             <button
               v-for="(choice, cIndex) in question.choices"
-              :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none ${getChoiceBtnClass(cIndex)}`"
               :key="cIndex"
+              :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none ${getChoiceBtnClass(cIndex)}`"
               :disabled="getChoiceDisabledState(cIndex)"
               @click="handleChoiceShortcut(cIndex)"
             >
@@ -445,12 +445,12 @@ defineShortcuts({
           <!-- Written Answer -->
           <div v-else class="flex w-full flex-col gap-2">
             <UInput
+              ref="input"
               v-model="userAnswer"
               :ui="{
                 base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 ${getWrittenInputClass()}`,
               }"
               :disabled="isInReview"
-              ref="input"
               variant="outline"
               color="neutral"
               autofocus
@@ -501,7 +501,7 @@ defineShortcuts({
       </UCard>
 
       <div class="grid grid-cols-3 gap-2">
-        <div></div>
+        <div />
 
         <div
           v-if="isInReview && setting.showCorrectAnswer && isIncorrect"
@@ -515,7 +515,7 @@ defineShortcuts({
           to continue
         </div>
 
-        <div v-else></div>
+        <div v-else />
 
         <div class="flex place-items-center place-self-end">
           <!-- Learn Settings -->

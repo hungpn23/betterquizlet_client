@@ -1,27 +1,31 @@
 <script lang="ts" setup>
 import { formatTimeAgo } from '@vueuse/core';
 import type { SelectMenuItem } from '@nuxt/ui';
+import type { UserStats } from '~~/shared/types/deck';
 
-const cardStatistics = [
-  {
-    title: "Today's Streak",
-    value: '12',
-    icon: 'i-lucide-flame',
-    color: 'warning' as const,
-  },
-  {
-    title: 'Total Words Learned',
-    value: '342',
-    icon: 'i-lucide-target',
-    color: 'info' as const,
-  },
-  {
-    title: 'Accuracy Rate',
-    value: '87%',
-    icon: 'i-lucide-book-marked',
-    color: 'success' as const,
-  },
-] as const;
+const userStatItems = computed(
+  () =>
+    [
+      {
+        title: 'Streak',
+        value: userStats.value?.currentStreak,
+        icon: 'i-lucide-flame',
+        color: 'warning' as const,
+      },
+      {
+        title: 'Total Cards Learned',
+        value: userStats.value?.totalCardsLearned,
+        icon: 'i-lucide-target',
+        color: 'info' as const,
+      },
+      {
+        title: 'Mastery Rate',
+        value: userStats.value?.masteryRate + '%',
+        icon: 'i-lucide-book-marked',
+        color: 'success' as const,
+      },
+    ] as const,
+);
 
 const defaults: DeckUrlParams = {
   page: '1',
@@ -133,40 +137,47 @@ const {
   data: paginated,
   error,
   status,
-} = useLazyFetch<Paginated<Deck>, ErrorResponse>('/api/decks', {
+} = useLazyFetch<Paginated<DeckWithStats>, ErrorResponse>('/api/decks', {
   query,
-  headers: {
-    Authorization: token.value || '',
-  },
+  headers: { Authorization: token.value || '' },
   server: false,
 });
 
-watch(
-  error,
-  (newErr) => {
-    if (newErr) {
-      toast.add({
-        title: 'Error fetching decks',
-        description: JSON.stringify(newErr?.data || 'Unknown error'),
-      });
-    }
-  },
-  { immediate: true },
-);
+const { data: userStats, error: userStatsError } = await useFetch<
+  UserStats,
+  ErrorResponse
+>('/api/study/stats', {
+  headers: { Authorization: token.value || '' },
+});
+
+watch([error, userStatsError], (newErr) => {
+  if (newErr) toast.add({ title: 'Error fetching decks' });
+});
+
+function getDeckProgress(deck: DeckWithStats) {
+  const total = deck.stats.total;
+  const known = deck.stats.known;
+
+  if (total === 0) return 0;
+
+  return Math.round((known / total) * 100);
+}
 </script>
 
 <template>
   <SkeletonHomePage v-if="status === 'idle' || status === 'pending'" />
 
-  <UPage>
+  <UPage v-else>
     <UContainer>
       <UPageHeader
-        :title="`Welcome back, ${user?.username}!`"
-        description="Continue learning and expand your vocabulary."
+        :ui="{
+          title:
+            'text-2xl sm:text-3xl text-pretty font-semibold text-highlighted',
+        }"
       >
         <UPageGrid class="mt-4 sm:grid-cols-1 md:grid-cols-3">
           <UPageCard
-            v-for="(c, index) in cardStatistics"
+            v-for="(c, index) in userStatItems"
             :key="index"
             :ui="{}"
             :class="`text-${c.color}`"
@@ -184,6 +195,20 @@ watch(
             </p>
           </UPageCard>
         </UPageGrid>
+
+        <template #title> Welcome back, {{ user?.username }} </template>
+
+        <template #description>
+          <ProseBlockquote>
+            {{ getDailyQuote()?.text }}
+            <span class="inline-block">
+              <ProseIcon name="i-lucide-minus" />
+              <span class="ml-2 font-medium not-italic">{{
+                getDailyQuote()?.author
+              }}</span>
+            </span>
+          </ProseBlockquote>
+        </template>
       </UPageHeader>
 
       <UPageBody class="space-y-4">
@@ -196,8 +221,9 @@ watch(
             </h2>
 
             <UButton
-              class="cursor-pointer transition-all hover:scale-103"
+              class="cursor-pointer transition-all hover:scale-105"
               label="Add a new deck"
+              variant="subtle"
               icon="i-lucide-plus"
               to="/create-deck"
               size="lg"
@@ -215,42 +241,83 @@ watch(
           </div>
         </div>
 
-        <UPageList class="gap-2 sm:gap-4" divide>
+        <div
+          v-if="paginated && paginated.metadata.totalRecords > 0"
+          class="flex flex-col gap-2 sm:gap-4"
+        >
           <TransitionGroup name="list" appear>
             <UCard
-              v-for="deck in paginated?.data || []"
-              :key="deck.id"
+              v-for="d in paginated.data"
+              :key="d.id"
               class="hover:bg-elevated cursor-pointer shadow-md transition-all hover:scale-101"
               variant="subtle"
               @click="
-                router.push(`/${user?.username}/${deck.slug}?deckId=${deck.id}`)
+                router.push(`/${user?.username}/${d.slug}?deckId=${d.id}`)
               "
             >
-              <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div class="grid grid-cols-1 sm:grid-cols-2">
                 <div class="flex place-items-center gap-1.5">
                   <h4 class="max-w-5/6 truncate font-medium sm:text-lg">
-                    {{ deck.name }}
+                    {{ d.name }}
                   </h4>
 
                   <UIcon
-                    :name="getVisibilityIcon(deck.visibility)"
+                    :name="getVisibilityIcon(d.visibility)"
                     class="shrink-0 sm:size-5"
                   />
                 </div>
 
                 <div class="text-muted text-start text-sm sm:text-end">
                   {{
-                    deck.openedAt
-                      ? `Last opened ${formatTimeAgo(new Date(deck.openedAt))}`
+                    d.openedAt
+                      ? `Last opened ${formatTimeAgo(new Date(d.openedAt))}`
                       : 'Never opened'
                   }}
                 </div>
               </div>
 
-              <UProgress :model-value="50" class="mt-4" />
+              <div class="mt-2 flex place-items-center gap-2 sm:gap-4">
+                <UTooltip :delay-duration="200" text="Known cards">
+                  <UBadge
+                    :label="d.stats.known"
+                    variant="soft"
+                    color="success"
+                    icon="i-lucide-circle-check"
+                  />
+                </UTooltip>
+
+                <UTooltip :delay-duration="200" text="Learning cards">
+                  <UBadge
+                    :label="d.stats.learning"
+                    variant="soft"
+                    color="warning"
+                    icon="i-lucide-circle-dashed"
+                  />
+                </UTooltip>
+
+                <UTooltip :delay-duration="200" text="New cards">
+                  <UBadge
+                    :label="d.stats.new"
+                    variant="soft"
+                    color="info"
+                    icon="i-lucide-sparkles"
+                  />
+                </UTooltip>
+
+                <UTooltip :delay-duration="200" text="Total cards">
+                  <UBadge
+                    :label="d.stats.total"
+                    variant="soft"
+                    color="neutral"
+                    icon="i-lucide-gallery-horizontal-end"
+                  />
+                </UTooltip>
+              </div>
+
+              <UProgress :model-value="getDeckProgress(d)" class="mt-4" />
             </UCard>
           </TransitionGroup>
-        </UPageList>
+        </div>
 
         <UPagination
           v-model:page="page"

@@ -8,9 +8,9 @@
         :key="index"
         :label="answer.text"
         :class="getButtonClass(index)"
-        @click="handleAnswer(index)"
         :disabled="answered"
         block
+        @click="handleAnswer(index)"
       />
     </div>
   </div>

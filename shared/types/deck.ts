@@ -1,19 +1,17 @@
 import type { UUID } from './branded';
 import type { PaginationQuery } from './pagination';
-import { CardSchema } from './card';
+import { cardSchema, type Card } from './card';
 import * as v from 'valibot';
 import type { Visibility } from '~/utils/enums';
 
-export const DeckWithCardsSchema = v.object({
+export const deckSchema = v.object({
   name: v.pipe(v.string(), v.minLength(1, 'Name is required')),
   description: v.string(),
   cards: v.pipe(
-    v.array(CardSchema),
+    v.array(cardSchema),
     v.minLength(4, 'At least 4 cards are required'),
   ),
 });
-
-export type DeckWithCards = v.InferOutput<typeof DeckWithCardsSchema>;
 
 export type Deck = {
   id: UUID;
@@ -23,6 +21,31 @@ export type Deck = {
   visibility: Visibility;
   openedAt?: string;
 };
+
+export type DeckStats = {
+  total: number;
+  known: number;
+  learning: number;
+  new: number;
+};
+
+export type DeckWithCards = Deck & {
+  cards: Card[];
+  stats: DeckStats;
+};
+
+export type DeckWithStats = Deck & {
+  stats: DeckStats;
+};
+
+export type UserStats = {
+  currentStreak: number;
+  longestStreak: number;
+  totalCardsLearned: number;
+  masteryRate: number;
+};
+
+export type DeckFormState = v.InferOutput<typeof deckSchema>;
 
 export type DeckOrderBy = 'createdAt' | 'updatedAt' | 'openedAt' | 'name';
 

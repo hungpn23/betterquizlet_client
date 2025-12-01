@@ -11,9 +11,8 @@ type Props = {
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: 'answers-saved', answers: CardAnswer[]): void;
-  (e: 'restarted'): void;
-  (e: 'ignore-date'): void;
+  (e: 'answers-saved', answers: Answer[]): void;
+  (e: 'restarted' | 'ignore-date'): void;
 }>();
 
 const isAnswersSaving = defineModel<boolean>('is-answers-saving');
@@ -158,7 +157,7 @@ defineShortcuts({
 
 <template>
   <div>
-    <slot name="routes"></slot>
+    <slot name="routes" />
 
     <div v-if="flashcard" class="flex w-full flex-col gap-2">
       <h1
@@ -224,7 +223,7 @@ defineShortcuts({
           {{ !isFlipped ? flashcard?.term : flashcard?.definition }}
         </div>
 
-        <div></div>
+        <div />
 
         <template #header>
           <UProgress
@@ -237,13 +236,13 @@ defineShortcuts({
 
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <div class="col-span-1">
-          <slot name="actions-left"></slot>
+          <slot name="actions-left" />
         </div>
 
         <div
           class="order-first col-span-full flex place-content-center place-items-center gap-3 sm:order-0 sm:col-span-1"
         >
-          <UTooltip :delay-duration="0" :kbds="['arrowleft']" text="Skip">
+          <UTooltip :delay-duration="200" :kbds="['arrowleft']" text="Skip">
             <UButton
               label="Skip"
               icon="i-heroicons-x-mark"
@@ -255,7 +254,7 @@ defineShortcuts({
             />
           </UTooltip>
 
-          <UTooltip :delay-duration="0" :kbds="['arrowright']" text="Next">
+          <UTooltip :delay-duration="200" :kbds="['arrowright']" text="Next">
             <UButton
               label="Next"
               icon="i-heroicons-check"
@@ -269,7 +268,7 @@ defineShortcuts({
         </div>
 
         <div class="col-span-1 flex place-content-end gap-2">
-          <slot name="actions-right"></slot>
+          <slot name="actions-right" />
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import type { UUID } from './branded';
 import * as v from 'valibot';
 
-export const CardSchema = v.object({
+export const cardSchema = v.object({
   id: v.pipe(
     v.string(),
     v.transform((val) => val as UUID),
@@ -21,16 +21,19 @@ export const CardSchema = v.object({
 
 export type CardStatus = 'known' | 'learning' | 'new';
 
-export type Card = v.InferOutput<typeof CardSchema>;
+export type Card = v.InferOutput<typeof cardSchema>;
 
-export type CardAnswer = Required<Pick<Card, 'id' | 'streak' | 'reviewDate'>>;
+export type Answer = Pick<Card, 'id' | 'streak' | 'reviewDate'>;
 
 export type FlashcardState = {
   totalCards: number;
   queue: Card[];
-  answers: CardAnswer[];
+  answers: Answer[];
   retryQueue: Card[];
 };
+
+export type QuestionType = 'multiple_choices' | 'written';
+export type QuestionDirection = 'term_to_def' | 'def_to_term' | 'both';
 
 export type LearnQuestion = Pick<Card, 'id' | 'streak' | 'reviewDate'> & {
   type: QuestionType;
@@ -45,7 +48,7 @@ export type LearnState = {
   totalQuestions: number;
   queue: LearnQuestion[];
   retryQueue: LearnQuestion[];
-  answers: CardAnswer[];
+  answers: Answer[];
 };
 
 export type LearnSetting = {
@@ -53,10 +56,6 @@ export type LearnSetting = {
   types: QuestionType[];
   direction: QuestionDirection;
 };
-
-export type QuestionType = 'multiple_choices' | 'written';
-
-export type QuestionDirection = 'term_to_def' | 'def_to_term' | 'both';
 
 export type TestQuestion = Omit<LearnQuestion, 'streak' | 'reviewDate'> & {
   userAnswer?: string;

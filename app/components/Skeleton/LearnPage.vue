@@ -76,8 +76,8 @@
 
         <!-- Bottom Area -->
         <div class="grid grid-cols-3 gap-2">
-          <div></div>
-          <div></div>
+          <div />
+          <div />
           <div class="flex place-items-center place-self-end">
             <USkeleton class="h-10 w-10 rounded-md" />
           </div>

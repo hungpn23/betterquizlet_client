@@ -5,11 +5,14 @@ import type {
   FormSubmitEvent,
 } from '@nuxt/ui';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { deckSchema } from '~~/shared/types/deck';
 
 const toast = useToast();
 const router = useRouter();
 const route = useRoute();
 const { token, data: user } = useAuth();
+
+const form = useTemplateRef('form');
 
 const isIgnoreDate = ref(false);
 const formErrorMsg = ref('');
@@ -18,9 +21,7 @@ const isSaving = ref(false);
 const isAnswersSaving = ref(false);
 const cards = ref<Card[]>([]);
 
-const form = useTemplateRef('form');
-
-const deckState = reactive<Partial<DeckWithCards>>({});
+const state = reactive<Partial<DeckFormState>>({});
 
 const deckId = computed(() => route.query.deckId as string);
 
@@ -59,20 +60,20 @@ const studyOptions = computed(() => [
   {
     label: 'Flashcards',
     icon: 'i-lucide-gallery-horizontal-end',
-    to: `/${user.value?.username}/${deckSlug.value}/flashcards?deckId=${deckId.value}`,
+    to: `/${username.value}/${deckSlug.value}/flashcards?deckId=${deckId.value}`,
   },
   {
     label: 'Learn',
     icon: 'i-lucide-notebook-pen',
-    to: `/${user.value?.username}/${deckSlug.value}/learn?deckId=${deckId.value}`,
+    to: `/${username.value}/${deckSlug.value}/learn?deckId=${deckId.value}`,
   },
   {
     label: 'Test',
     icon: 'i-lucide-flask-conical',
-    to: `/${user.value?.username}/${deckSlug.value}/test?deckId=${deckId.value}`,
+    to: `/${username.value}/${deckSlug.value}/test?deckId=${deckId.value}`,
   },
   {
-    label: 'Comming soon',
+    label: 'Coming soon',
     icon: '',
     to: `#`,
   },
@@ -122,11 +123,11 @@ async function onRestarted() {
   await refresh();
 }
 
-function onAnswersSaved(answers: CardAnswer[]) {
+function onAnswersSaved(answers: Answer[]) {
   const map = new Map(answers.map((a) => [a.id, a]));
 
-  if (deckState.cards?.length) {
-    for (const c of deckState.cards) {
+  if (state.cards?.length) {
+    for (const c of state.cards) {
       const answer = map.get(c.id);
 
       if (answer) {
@@ -159,7 +160,9 @@ async function onDeckDelete() {
     });
 }
 
-async function onSubmit(event: FormSubmitEvent<DeckWithCards>) {
+async function onSubmit(
+  event: FormSubmitEvent<{ name: string; description: string; cards: Card[] }>,
+) {
   if (isSaving.value) return;
   isSaving.value = true;
 
@@ -223,14 +226,14 @@ function cancelEditing() {
 
 function resetFormState(newRes?: DeckWithCards) {
   if (newRes) {
-    deckState.name = newRes.name;
-    deckState.description = newRes.description || '';
-    deckState.cards = structuredClone(newRes.cards);
+    state.name = newRes.name;
+    state.description = newRes.description || '';
+    state.cards = structuredClone(newRes.cards);
   }
 }
 
 function addCardFirst() {
-  deckState.cards?.unshift({
+  state.cards?.unshift({
     id: `temp ${crypto.randomUUID()}` as UUID,
     term: '',
     definition: '',
@@ -247,7 +250,7 @@ function addCardFirst() {
 }
 
 function addCardLast() {
-  deckState.cards?.push({
+  state.cards?.push({
     id: `temp ${crypto.randomUUID()}` as UUID,
     term: '',
     definition: '',
@@ -264,7 +267,7 @@ function addCardLast() {
 }
 
 function deleteCard(cardId?: UUID) {
-  deckState.cards = deckState.cards?.filter((c) => c.id !== cardId);
+  state.cards = state.cards?.filter((c) => c.id !== cardId);
 }
 </script>
 
@@ -282,9 +285,9 @@ function deleteCard(cardId?: UUID) {
       />
 
       <UForm
-        :schema="DeckWithCardsSchema"
-        :state="deckState"
         ref="form"
+        :schema="deckSchema"
+        :state="state"
         @submit="onSubmit"
         @error="onError"
       >
@@ -368,7 +371,7 @@ function deleteCard(cardId?: UUID) {
           <template #title>
             <UFormField name="name">
               <UInput
-                v-model="deckState.name"
+                v-model="state.name"
                 :disabled="!isEditing"
                 :ui="{
                   base: `${!isEditing ? 'p-0' : ''} text-highlighted text-2xl font-bold text-pretty sm:text-3xl disabled:opacity-100 disabled:cursor-default`,
@@ -384,7 +387,7 @@ function deleteCard(cardId?: UUID) {
               name="description"
             >
               <UTextarea
-                v-model="deckState.description"
+                v-model="state.description"
                 :rows="1"
                 :maxrows="10"
                 :disabled="!isEditing"
@@ -405,7 +408,7 @@ function deleteCard(cardId?: UUID) {
               <h2
                 class="flex place-items-center gap-1 text-lg font-medium sm:text-xl"
               >
-                Terms ({{ deckState.cards?.length || 0 }})
+                Terms ({{ state.cards?.length || 0 }})
 
                 <UIcon
                   v-if="!isAnswersSaving"
@@ -465,7 +468,7 @@ function deleteCard(cardId?: UUID) {
 
             <TransitionGroup name="list" appear>
               <UCard
-                v-for="(c, index) in deckState.cards"
+                v-for="(c, index) in state.cards"
                 :key="c.id"
                 class="bg-elevated"
                 variant="subtle"

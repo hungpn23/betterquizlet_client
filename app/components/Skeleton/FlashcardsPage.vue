@@ -41,7 +41,7 @@
 
         <USkeleton class="h-8 w-3/4 sm:h-10" />
 
-        <div></div>
+        <div />
 
         <template #header>
           <USkeleton class="h-1 w-full rounded-none" />
@@ -50,7 +50,7 @@
 
       <!-- Actions -->
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <div class="col-span-1"></div>
+        <div class="col-span-1" />
 
         <div
           class="order-first col-span-full flex place-content-center place-items-center gap-3 sm:order-0 sm:col-span-1"
@@ -59,7 +59,7 @@
           <USkeleton class="h-12 w-24 rounded-lg" />
         </div>
 
-        <div class="col-span-1"></div>
+        <div class="col-span-1" />
       </div>
     </div>
   </UContainer>

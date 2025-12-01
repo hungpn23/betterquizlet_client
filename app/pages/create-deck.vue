@@ -38,7 +38,7 @@ const formErrorMsg = ref('');
 
 const router = useRouter();
 const toast = useToast();
-const { token, data: user } = useAuth();
+const { token } = useAuth();
 
 const schema = v.object({
   name: v.pipe(v.string(), v.minLength(1, 'Name is required')),
@@ -153,7 +153,7 @@ async function onCreate(event: FormSubmitEvent<Schema>) {
     },
     body: event.data,
   })
-    .then((res) => {
+    .then(() => {
       router.push('/home');
 
       toast.add({
@@ -272,9 +272,9 @@ async function onError(event: FormErrorEvent) {
 
       <UPageBody>
         <UForm
+          id="create-deck-form"
           :schema="schema"
           :state="createState"
-          id="create-deck-form"
           class="flex flex-col gap-4"
           @submit="onCreate"
           @error="onError"
@@ -376,9 +376,9 @@ async function onError(event: FormErrorEvent) {
 
               <template #body>
                 <UForm
+                  id="import-form"
                   :schema="importSchema"
                   :state="importState"
-                  id="import-form"
                   class="flex flex-col gap-4"
                   @submit="onImportSubmit"
                 >
