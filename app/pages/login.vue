@@ -15,40 +15,38 @@ useSeoMeta({
   description: 'Login to your account to continue',
 });
 
+const schema = v.object({
+  username: v.pipe(
+    v.string(),
+    v.minLength(6, 'Must be at least 6 characters'),
+    v.maxLength(20, 'Must be at most 20 characters'),
+  ),
+  password: v.message(
+    v.pipe(
+      v.string(),
+      v.regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!#$%&*@^]).{8,}$/),
+    ),
+    'Password must contain at least 8 characters, including uppercase, lowercase, number, and special characters.',
+  ),
+});
+
+type Schema = v.InferOutput<typeof schema>;
+
 const toast = useToast();
 const { signIn } = useAuth();
-
-const fields = [
-  {
-    name: 'username',
-    type: 'text' as const,
-    label: 'Username',
-    placeholder: 'Enter your username',
-    required: true,
-  },
-  {
-    name: 'password',
-    label: 'Password',
-    type: 'password' as const,
-    placeholder: 'Enter your password',
-  },
-  {
-    name: 'remember',
-    label: 'Remember me',
-    type: 'checkbox' as const,
-  },
-];
 
 const providers = [
   {
     label: 'Google',
+    class: 'cursor-pointer',
     icon: 'i-simple-icons-google',
     onClick: () => {
       toast.add({ title: 'Google', description: 'Login with Google' });
     },
   },
   {
-    label: 'GitHub',
+    label: 'Github',
+    class: 'cursor-pointer',
     icon: 'i-simple-icons-github',
     onClick: () => {
       toast.add({ title: 'GitHub', description: 'Login with GitHub' });
@@ -56,43 +54,29 @@ const providers = [
   },
 ];
 
-const schema = v.object({
-  username: v.pipe(
-    v.string(),
-    v.minLength(6, 'Must be at least 6 characters'),
-    v.maxLength(20, 'Must be at most 20 characters'),
-  ),
-  password: v.pipe(v.string(), v.minLength(8, 'Must be at least 8 characters')),
-});
+function onGoogleLogin() {
+  // implement Google login logic here
+}
 
-type Schema = v.InferOutput<typeof schema>;
+function onSubmit(payload: FormSubmitEvent<Schema>) {
+  signIn(payload.data, { callbackUrl: '/home' }).catch(
+    (error: ErrorResponse) => {
+      console.log('Login error:', error);
 
-async function onSubmit(payload: FormSubmitEvent<Schema>) {
-  try {
-    await signIn(payload.data, { callbackUrl: '/home' });
-  } catch (error) {
-    toast.add({
-      title: 'Login failed',
-      description: JSON.stringify((error as ErrorResponse).data),
-    });
-  }
+      toast.add({ title: 'Login failed' });
+    },
+  );
 }
 </script>
 
 <template>
   <UAuthForm
-    :fields="fields"
+    :fields="logInFields"
     :schema="schema"
     :providers="providers"
-    title="Welcome back"
-    icon="i-lucide-lock"
+    title="Better Quizlet"
     @submit.prevent="onSubmit"
   >
-    <template #description>
-      Don't have an account?
-      <ULink to="/signup" class="text-primary font-medium">Sign up</ULink>.
-    </template>
-
     <template #password-hint>
       <ULink to="/" class="text-primary font-medium" tabindex="-1"
         >Forgot password?</ULink
@@ -100,8 +84,8 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
     </template>
 
     <template #footer>
-      By signing in, you agree to our
-      <ULink to="/" class="text-primary font-medium">Terms of Service</ULink>.
+      Don't have an account?
+      <ULink to="/signup" class="text-primary font-medium">Sign up</ULink>.
     </template>
   </UAuthForm>
 </template>

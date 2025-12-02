@@ -15,47 +15,6 @@ useSeoMeta({
   description: 'Create an account to get started',
 });
 
-const toast = useToast();
-const { signUp } = useAuth();
-
-const fields = [
-  {
-    name: 'username',
-    type: 'text' as const,
-    label: 'Username',
-    placeholder: 'Enter your username',
-  },
-  {
-    name: 'password',
-    label: 'Password',
-    type: 'password' as const,
-    placeholder: 'Enter your password',
-  },
-  {
-    name: 'confirmPassword',
-    label: 'Confirm password',
-    type: 'password' as const,
-    placeholder: 'Enter your confirm password',
-  },
-];
-
-const providers = [
-  {
-    label: 'Google',
-    icon: 'i-simple-icons-google',
-    onClick: () => {
-      toast.add({ title: 'Google', description: 'Login with Google' });
-    },
-  },
-  {
-    label: 'GitHub',
-    icon: 'i-simple-icons-github',
-    onClick: () => {
-      toast.add({ title: 'GitHub', description: 'Login with GitHub' });
-    },
-  },
-];
-
 const schema = v.pipe(
   v.object({
     username: v.pipe(
@@ -84,35 +43,49 @@ const schema = v.pipe(
 
 type Schema = v.InferOutput<typeof schema>;
 
-async function onSubmit(payload: FormSubmitEvent<Schema>) {
-  try {
-    await signUp(payload.data, { callbackUrl: '/' });
-  } catch (error) {
-    toast.add({
-      title: 'Sign up failed',
-      description: JSON.stringify((error as ErrorResponse).data),
-    });
-  }
+const toast = useToast();
+const { signUp } = useAuth();
+
+const providers = [
+  {
+    label: 'Google',
+    icon: 'i-simple-icons-google',
+    onClick: () => {
+      toast.add({ title: 'Google', description: 'Login with Google' });
+    },
+  },
+  {
+    label: 'GitHub',
+    icon: 'i-simple-icons-github',
+    onClick: () => {
+      toast.add({ title: 'GitHub', description: 'Login with GitHub' });
+    },
+  },
+];
+
+function onSubmit(payload: FormSubmitEvent<Schema>) {
+  signUp(payload.data, { callbackUrl: '/home' }).catch(
+    (error: ErrorResponse) => {
+      console.log('Login error:', error);
+
+      toast.add({ title: 'Login failed' });
+    },
+  );
 }
 </script>
 
 <template>
   <UAuthForm
-    :fields="fields"
+    :fields="signUpFields"
     :schema="schema"
     :providers="providers"
-    title="Create an account"
     :submit="{ label: 'Create account' }"
-    @submit="onSubmit"
+    title="Create an account"
+    @submit.prevent="onSubmit"
   >
-    <template #description>
+    <template #footer>
       Already have an account?
       <ULink to="/login" class="text-primary font-medium">Login</ULink>.
-    </template>
-
-    <template #footer>
-      By signing up, you agree to our
-      <ULink to="/" class="text-primary font-medium">Terms of Service</ULink>.
     </template>
   </UAuthForm>
 </template>

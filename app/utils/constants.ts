@@ -81,3 +81,42 @@ export const profileTabItems = [
     icon: 'i-lucide-pen-line',
   },
 ];
+
+export const logInFields = [
+  {
+    name: 'username',
+    type: 'text' as const,
+    label: 'Username',
+    placeholder: 'Enter your username',
+    required: true,
+  },
+  {
+    name: 'password',
+    label: 'Password',
+    type: 'password' as const,
+    placeholder: 'Enter your password',
+  },
+];
+
+export const signUpFields = [
+  ...logInFields,
+  {
+    name: 'confirmPassword',
+    label: 'Confirm password',
+    type: 'password' as const,
+    placeholder: 'Enter your confirm password',
+  },
+];
+
+export const authProviders = [
+  {
+    label: 'Google',
+    class: 'cursor-pointer',
+    icon: 'i-simple-icons-google',
+  },
+  {
+    label: 'Github',
+    class: 'cursor-pointer',
+    icon: 'i-simple-icons-github',
+  },
+];

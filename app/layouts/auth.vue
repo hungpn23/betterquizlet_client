@@ -1,17 +1,18 @@
 <template>
-  <div class="h-screen flex items-center justify-center px-4">
+  <div class="flex h-screen items-center justify-center px-4">
     <UButton
       icon="i-lucide-chevron-left"
       to="/"
       size="xl"
       color="neutral"
       variant="subtle"
-      class="absolute left-8 top-8 rounded-full z-10"
+      class="absolute top-8 left-8 z-10 rounded-full"
     />
 
     <UPageCard
+      :ui="{ container: 'p-0' }"
       variant="subtle"
-      class="max-w-sm w-full"
+      class="sm:bg-elevated/50 sm:ring-default w-full max-w-sm bg-inherit ring-0 sm:ring"
     >
       <slot />
     </UPageCard>
