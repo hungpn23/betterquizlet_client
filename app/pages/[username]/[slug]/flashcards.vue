@@ -47,7 +47,7 @@ async function onRestarted() {
   <SkeletonFlashcardsPage v-if="status === 'idle' || status === 'pending'" />
 
   <UContainer v-else>
-    <Flashcard
+    <AppFlashcard
       :title="deck?.name"
       :deck="{ id: deckId, slug: deckSlug }"
       :cards
@@ -73,6 +73,6 @@ async function onRestarted() {
           />
         </div>
       </template>
-    </Flashcard>
+    </AppFlashcard>
   </UContainer>
 </template>

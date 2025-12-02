@@ -312,7 +312,7 @@ function deleteCard(cardId?: UUID) {
             </div>
 
             <!-- Flashcard Study -->
-            <Flashcard
+            <AppFlashcard
               v-model:is-answers-saving="isAnswersSaving"
               :deck="{ id: deckId, slug: deckSlug }"
               :cards
@@ -364,7 +364,7 @@ function deleteCard(cardId?: UUID) {
                   </UDropdownMenu>
                 </div>
               </template>
-            </Flashcard>
+            </AppFlashcard>
           </div>
 
           <!-- Title and Description -->

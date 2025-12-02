@@ -190,10 +190,19 @@ function getDeckProgress(deck: DeckWithStats) {
               </div>
 
               <div class="mt-2 flex place-items-center gap-2 sm:gap-4">
+                <UTooltip :delay-duration="200" text="Total cards">
+                  <UBadge
+                    :label="d.stats.total"
+                    variant="outline"
+                    color="neutral"
+                    icon="i-lucide-gallery-horizontal-end"
+                  />
+                </UTooltip>
+
                 <UTooltip :delay-duration="200" text="Known cards">
                   <UBadge
                     :label="d.stats.known"
-                    variant="soft"
+                    variant="outline"
                     color="success"
                     icon="i-lucide-circle-check"
                   />
@@ -202,7 +211,7 @@ function getDeckProgress(deck: DeckWithStats) {
                 <UTooltip :delay-duration="200" text="Learning cards">
                   <UBadge
                     :label="d.stats.learning"
-                    variant="soft"
+                    variant="outline"
                     color="warning"
                     icon="i-lucide-circle-dashed"
                   />
@@ -211,18 +220,9 @@ function getDeckProgress(deck: DeckWithStats) {
                 <UTooltip :delay-duration="200" text="New cards">
                   <UBadge
                     :label="d.stats.new"
-                    variant="soft"
+                    variant="outline"
                     color="info"
                     icon="i-lucide-sparkles"
-                  />
-                </UTooltip>
-
-                <UTooltip :delay-duration="200" text="Total cards">
-                  <UBadge
-                    :label="d.stats.total"
-                    variant="soft"
-                    color="neutral"
-                    icon="i-lucide-gallery-horizontal-end"
                   />
                 </UTooltip>
               </div>

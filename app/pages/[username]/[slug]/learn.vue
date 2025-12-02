@@ -507,10 +507,10 @@ defineShortcuts({
           v-if="isInReview && setting.showCorrectAnswer && isIncorrect"
           class="place-self-center font-semibold"
         >
-          Press <Kbd label="Space" />
+          Press <AppKbd label="Space" />
           <span v-if="question.correctChoiceIndex">
             or
-            <Kbd :label="question.correctChoiceIndex + 1" />
+            <AppKbd :label="question.correctChoiceIndex + 1" />
           </span>
           to continue
         </div>

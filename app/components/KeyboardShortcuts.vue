@@ -36,7 +36,7 @@ const isShortcutOpen = ref(false);
           <div>Toggle color mode</div>
 
           <div class="flex place-items-center">
-            <Kbd label="`" />
+            <AppKbd label="`" />
           </div>
         </div>
 
@@ -46,7 +46,7 @@ const isShortcutOpen = ref(false);
           <div>Flip card</div>
 
           <div class="flex place-items-center">
-            <Kbd label="Space" />
+            <AppKbd label="Space" />
           </div>
         </div>
 
@@ -54,8 +54,8 @@ const isShortcutOpen = ref(false);
           <div>Skip/Next card</div>
 
           <div class="flex place-items-center">
-            <Kbd :icon="{ name: 'i-lucide-move-left' }" />/
-            <Kbd :icon="{ name: 'i-lucide-move-right' }" />
+            <AppKbd :icon="{ name: 'i-lucide-move-left' }" />/
+            <AppKbd :icon="{ name: 'i-lucide-move-right' }" />
           </div>
         </div>
 
@@ -65,8 +65,8 @@ const isShortcutOpen = ref(false);
           <div>Choose an answer</div>
 
           <div class="flex place-items-center">
-            <Kbd label="1" />/ <Kbd label="2" />/ <Kbd label="3" />/
-            <Kbd label="4" />
+            <AppKbd label="1" />/ <AppKbd label="2" />/ <AppKbd label="3" />/
+            <AppKbd label="4" />
           </div>
         </div>
 
@@ -74,8 +74,8 @@ const isShortcutOpen = ref(false);
           <div>Get a hint</div>
 
           <div class="place-items center flex">
-            <Kbd label="Shift" />+
-            <Kbd label="/" />
+            <AppKbd label="Shift" />+
+            <AppKbd label="/" />
           </div>
         </div>
 
@@ -83,8 +83,8 @@ const isShortcutOpen = ref(false);
           <div>Mark as don't know</div>
 
           <div class="place-items center flex">
-            <Kbd label="Shift" />+
-            <Kbd label="X" />
+            <AppKbd label="Shift" />+
+            <AppKbd label="X" />
           </div>
         </div>
 
@@ -94,8 +94,8 @@ const isShortcutOpen = ref(false);
           <div>Previous/Next question</div>
 
           <div class="flex place-items-center">
-            <Kbd :icon="{ name: 'i-lucide-move-left' }" />/
-            <Kbd :icon="{ name: 'i-lucide-move-right' }" />
+            <AppKbd :icon="{ name: 'i-lucide-move-left' }" />/
+            <AppKbd :icon="{ name: 'i-lucide-move-right' }" />
           </div>
         </div>
 
@@ -105,9 +105,9 @@ const isShortcutOpen = ref(false);
           <div>Go back/forward</div>
 
           <div class="place-items center flex">
-            <Kbd :icon="{ name: 'i-lucide-command', size: 4 }" />+
-            <Kbd :icon="{ name: 'i-lucide-move-left' }" />/
-            <Kbd :icon="{ name: 'i-lucide-move-right' }" />
+            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />+
+            <AppKbd :icon="{ name: 'i-lucide-move-left' }" />/
+            <AppKbd :icon="{ name: 'i-lucide-move-right' }" />
           </div>
         </div>
       </div>
