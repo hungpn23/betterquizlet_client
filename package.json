@@ -12,15 +12,13 @@
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.75",
-    "@iconify-json/simple-icons": "^1.2.60",
-    "@nuxt/image": "^2.0.0",
+    "@nuxt/content": "3.9.0",
     "@nuxt/ui": "^4.2.1",
     "@sidebase/nuxt-auth": "1.1.0",
     "@vueuse/nuxt": "^14.0.0",
     "date-fns": "^4.1.0",
     "next-auth": "4.21.1",
     "nuxt": "^4.2.1",
-    "nuxt-og-image": "^5.1.12",
     "ufo": "^1.6.1",
     "valibot": "^1.1.0"
   },

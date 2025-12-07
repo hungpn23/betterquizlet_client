@@ -4,19 +4,18 @@ export default defineNuxtConfig({
     apiUrl: process.env.API_URL,
     appUrl: process.env.APP_URL,
   },
+
   modules: [
     '@nuxt/eslint',
-    '@nuxt/image',
     '@nuxt/ui',
-    '@nuxt/content',
     '@vueuse/nuxt',
-    'nuxt-og-image',
     '@sidebase/nuxt-auth',
+    '@nuxt/content',
   ],
 
-  // devtools: {
-  //   enabled: true,
-  // },
+  devtools: {
+    enabled: true,
+  },
 
   css: ['~/assets/css/main.css'],
 
@@ -27,11 +26,14 @@ export default defineNuxtConfig({
     globalAppMiddleware: true,
     provider: {
       type: 'local',
-      token: { signInResponseTokenPointer: '/accessToken' },
+      token: {
+        signInResponseTokenPointer: '/accessToken',
+        maxAgeInSeconds: 1800, // 30 minutes
+      },
       refresh: {
         isEnabled: true,
         refreshOnlyToken: false,
-        token: { maxAgeInSeconds: 1_209_600 }, // 14 days },
+        token: { maxAgeInSeconds: 1_209_600 }, // 14 days
       },
       pages: { login: '/login' },
       session: {
