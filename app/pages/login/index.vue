@@ -53,7 +53,21 @@ const providers = [
 ];
 
 function onGoogleLogin() {
-  window.location.href = '/api/auth/google';
+  const config = useRuntimeConfig();
+  const { googleRedirectUri: redirectUri, googleClientId: clientId } =
+    config.public;
+
+  const options = {
+    redirect_uri: redirectUri,
+    client_id: clientId,
+    response_type: 'code',
+    scope: 'profile email',
+    prompt: 'select_account',
+  };
+
+  const searchParams = new URLSearchParams(options);
+
+  window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${searchParams.toString()}`;
 }
 
 function onSubmit(payload: FormSubmitEvent<Schema>) {

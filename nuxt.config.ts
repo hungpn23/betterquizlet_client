@@ -1,8 +1,12 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   runtimeConfig: {
-    apiUrl: process.env.API_URL,
-    appUrl: process.env.APP_URL,
+    apiUrl: '',
+    public: {
+      appUrl: '',
+      googleClientId: '',
+      googleRedirectUri: '',
+    },
   },
 
   modules: [
