@@ -17,7 +17,7 @@ const emit = defineEmits<{
 }>();
 
 const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
-const throttledHandleAnswer = useThrottleFn(onAnswer, 300);
+const throttledOnAnswer = useThrottleFn(onAnswer, 300);
 
 // --- Text-to-Speech Setup ---
 const textToSpeech = ref('');
@@ -48,8 +48,8 @@ function toggleFlip() {
 
 defineShortcuts({
   ' ': throttledToggleFlip,
-  arrowright: () => throttledHandleAnswer(true),
-  arrowleft: () => throttledHandleAnswer(false),
+  arrowright: () => throttledOnAnswer(true),
+  arrowleft: () => throttledOnAnswer(false),
 });
 </script>
 
@@ -156,7 +156,7 @@ defineShortcuts({
               variant="subtle"
               color="error"
               class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
-              @click="throttledHandleAnswer(false)"
+              @click="throttledOnAnswer(false)"
             />
           </UTooltip>
 
@@ -168,7 +168,7 @@ defineShortcuts({
               variant="subtle"
               color="success"
               class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
-              @click="throttledHandleAnswer(true)"
+              @click="throttledOnAnswer(true)"
             />
           </UTooltip>
         </div>

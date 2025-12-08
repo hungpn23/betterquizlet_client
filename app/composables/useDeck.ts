@@ -98,7 +98,7 @@ export const useDeck = () => {
     await refresh();
   }
 
-  async function onRestarted() {
+  async function onRestart() {
     const id = deckId.value;
     if (!id) return;
 
@@ -121,7 +121,7 @@ export const useDeck = () => {
       });
   }
 
-  function handleAnswer(isCorrect: boolean) {
+  async function handleAnswer(isCorrect: boolean) {
     if (!session.currentQuestion) return;
 
     isAnswersSaving.value = true;
@@ -146,6 +146,10 @@ export const useDeck = () => {
     // Pick next card
     if (!session.queue.length) {
       if (!session.retryQueue.length) {
+        if (isIgnoreDate.value) {
+          await Promise.all([saveAnswers(), refresh()]);
+        }
+
         session.currentQuestion = undefined;
         return;
       }
@@ -201,7 +205,7 @@ export const useDeck = () => {
     // Actions
     refresh,
     onIgnoreDate,
-    onRestarted,
+    onRestart,
     handleAnswer,
   };
 };

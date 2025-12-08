@@ -17,6 +17,7 @@ const {
   deck,
   session,
   status,
+  isIgnoreDate,
   isAnswersSaving,
   progress,
   deckId,
@@ -24,7 +25,7 @@ const {
   username,
   refresh,
   onIgnoreDate,
-  onRestarted,
+  onRestart,
   handleAnswer,
 } = useDeck();
 
@@ -34,10 +35,29 @@ const isSavingChanges = ref(false);
 
 const state = reactive<Partial<DeckFormState>>({});
 
-const deckSettingOptions = computed<DropdownMenuItem[][]>(() => [
+const settingOptions = computed<DropdownMenuItem[][]>(() => [
   [
     {
-      label: 'Edit',
+      label: 'Restart progress',
+      icon: 'i-lucide-refresh-cw',
+      color: 'warning',
+      onSelect: onRestart,
+    },
+    {
+      label: 'Ignore review dates',
+      icon: `i-lucide-calendar${isIgnoreDate.value ? '-off' : ''}`,
+      type: 'checkbox',
+      checked: isIgnoreDate.value,
+      onUpdateChecked(checked: boolean) {
+        isIgnoreDate.value = checked;
+      },
+      onSelect(e: Event) {
+        e.preventDefault();
+        isIgnoreDate.value = !isIgnoreDate.value;
+      },
+    },
+    {
+      label: 'Edit deck',
       icon: 'i-lucide-pencil-line',
       disabled: isEditing.value,
       onSelect: startEditing,
@@ -45,7 +65,7 @@ const deckSettingOptions = computed<DropdownMenuItem[][]>(() => [
   ],
   [
     {
-      label: 'Delete',
+      label: 'Delete deck',
       icon: 'i-lucide-trash-2',
       color: 'error',
       onSelect: onDelete,
@@ -279,7 +299,7 @@ function removeCard(cardId?: UUID) {
               :deck="{ id: deckId, slug: deckSlug }"
               :session="session"
               :progress
-              @restarted="onRestarted"
+              @restarted="onRestart"
               @ignore-date="onIgnoreDate"
               @answer="handleAnswer"
             >
@@ -316,7 +336,7 @@ function removeCard(cardId?: UUID) {
                     size="lg"
                   />
 
-                  <UDropdownMenu :items="deckSettingOptions">
+                  <UDropdownMenu :items="settingOptions">
                     <UButton
                       class="cursor-pointer"
                       color="neutral"
