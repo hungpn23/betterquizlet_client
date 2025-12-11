@@ -5,7 +5,6 @@ import type {
   FormSubmitEvent,
 } from '@nuxt/ui';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { deckSchema } from '~~/shared/types/deck';
 
 const toast = useToast();
 const router = useRouter();
@@ -28,6 +27,12 @@ const {
   onRestart,
   handleAnswer,
 } = useDeck();
+
+onMounted(() => {
+  const { fetchDeck } = useDeckStore();
+
+  fetchDeck(deckId.value);
+});
 
 const formErrorMsg = ref('');
 const isEditing = ref(false);

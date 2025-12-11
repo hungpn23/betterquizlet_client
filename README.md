@@ -26,11 +26,9 @@
   - **`pages/`**: Application routing.
     - `[username]/[slug]/`: Nested routes for deck viewing and studying (`learn.vue`, `flashcards.vue`).
     - `create-deck.vue`: Deck creation interface.
-    - `gemini.vue`: Experimental/Test quiz component.
   - **`utils/`**: Logic helpers for card state (`calcCardState.ts`), shuffling, and text processing.
 - **`content/`**: Data-driven content for marketing pages (YAML/Markdown).
-- **`server/`**: Nitro server-side logic.
-  - **`api/`**: API endpoints for user data, deck management, and study progress.
+- **`server/api/`**: Act like a proxy server.
 - **`shared/types/`**: Shared TypeScript interfaces (`card.ts`, `deck.ts`, `branded.ts`).
 - **`nuxt.config.ts`**: Main configuration (Auth provider, Modules).
 
@@ -44,8 +42,8 @@
 
 2.  **Authentication:**
     - Local email/password strategy.
-    - Session management via `useAuth` (Sidebase).
-    - Endpoints: `/login`, `/register`, `/api/users/me`.
+    - Implemented Google OAuth2 with Authorization Code Flow.
+    - Session management and Refresh token rotation via `useAuth` & `useAuthState` (Sidebase).
 
 3.  **Data Models:**
     - **Decks:** Collections of cards.
@@ -65,8 +63,8 @@
 
 ## Development Conventions
 
-- **Typing:** Strict TypeScript usage. Always use types from `shared/types/` when dealing with business entities (Decks, Cards).
 - **UI Components:** Prefer **Nuxt UI** components (`<UButton>`, `<UCard>`, `<UIcon>`) over raw HTML/Tailwind where possible.
+- **Typing:** Strict TypeScript usage. Always use types from `shared/types/` when dealing with business entities (Decks, Cards).
 - **Icons:** Lucide icons via Nuxt UI (e.g., `i-lucide-home`).
 - **Fetching:** Use `useFetch` or `$fetch` for API interactions.
 - **Styling:** Utility-first with Tailwind CSS. Avoid global CSS files unless necessary.
