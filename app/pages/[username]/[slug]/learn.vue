@@ -62,11 +62,7 @@ watch(
         cards: getCards(newCards, store.isIgnoreDate),
         types: setting.types,
         dir: setting.direction,
-        answerPool: newCards.map((c) => ({
-          id: c.id,
-          term: c.term,
-          definition: c.definition,
-        })),
+        answerPool: newCards,
       });
       session.totalQuestions = session.studyQueue.length;
       session.currentQuestion = session.studyQueue.shift();
@@ -542,7 +538,7 @@ defineShortcuts({
             </template>
 
             <template #body>
-              <div class="flex flex-col gap-2 font-semibold">
+              <div class="flex flex-col gap-2 font-medium">
                 <div
                   class="flex place-content-between place-items-center gap-2"
                 >

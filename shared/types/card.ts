@@ -50,13 +50,6 @@ export type LearnQuestion = Pick<Card, 'id' | 'streak' | 'reviewDate'> & {
   correctChoiceIndex?: number;
 };
 
-export type LearnState = {
-  totalQuestions: number;
-  queue: LearnQuestion[];
-  retryQueue: LearnQuestion[];
-  answers: Answer[];
-};
-
 export type LearnSession = {
   isSavingAnswers: boolean;
   correctCount: number;
@@ -81,15 +74,26 @@ export type LearnSetting = {
   direction: QuestionDirection;
 };
 
-export type TestQuestion = Omit<LearnQuestion, 'streak' | 'reviewDate'> & {
-  userAnswer?: string;
-  userChoiceIndex?: number;
-  isUserAnswerCorrect?: boolean;
-  isMarkedAsDontKnow?: boolean;
+export type TestQuestion = Omit<LearnQuestion, 'streak' | 'reviewDate'> &
+  Partial<{
+    userAnswer: string;
+    userChoiceIndex: number;
+    isUserAnswerCorrect: boolean;
+    isMarkedAsDontKnow: boolean;
+  }>;
+
+export type TestSession = {
+  questions: TestQuestion[];
+  isSubmitted: boolean;
+  questionIndex: number;
+  questionInput?: HTMLInputElement | null;
+  questionElement?: Element | null;
+  question?: TestQuestion | null;
 };
 
 export type TestSetting = {
   questionAmount: number;
+  isIgnoreDate: boolean;
   types: QuestionType[];
   direction: QuestionDirection;
 };

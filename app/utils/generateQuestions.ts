@@ -4,7 +4,7 @@ export const generateQuestions = <
   cards: Card[];
   types: QuestionType[];
   dir: QuestionDirection;
-  answerPool: Pick<Card, 'id' | 'term' | 'definition'>[];
+  answerPool: Card[];
 }): T[] => {
   const { cards, types, dir, answerPool } = options;
   if (answerPool.length < 4) return [];
