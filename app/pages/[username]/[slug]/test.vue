@@ -10,44 +10,56 @@ const cardRefs = useTemplateRef('cards');
 const throttledOnChoiceSelected = useThrottleFn(onChoiceSelected, 300);
 
 const isSettingOpen = ref(false);
-const isSubmitted = ref(false);
-const questions = ref<TestQuestion[]>([]);
 
 const setting = reactive<TestSetting>({
   questionAmount: 0,
-  isIgnoreDate: false,
+  isIgnoreDate: true,
   types: ['multiple_choices', 'written'],
   direction: 'term_to_def',
 });
 let snapshotSetting = '';
 
-const session = reactive({
+const session = reactive<TestSession>({
   index: 0,
-  input: null as HTMLInputElement | null,
-  element: null as Element | null,
+  isSubmitted: false,
+  questions: [],
+  currentQuestion: undefined,
+  input: null,
+  element: null,
 });
 
-const currentQuestion = computed(() => questions.value[session.index]);
+watch([() => session.questions, () => session.index], () => {
+  session.currentQuestion = session.questions[session.index];
+});
 
 watch([cardRefs, () => session.index], () => {
-  if (cardRefs.value) {
+  if (cardRefs.value?.length) {
     session.element = cardRefs.value[session.index]?.$el as Element;
   }
 });
 
 watch(
-  [() => store.deck?.cards, () => setting.isIgnoreDate],
-  ([newCards, isIgnoreDate]) => {
+  [
+    () => store.deck?.cards,
+    () => setting.isIgnoreDate,
+    () => setting.questionAmount,
+  ],
+  ([newCards, newIsIgnoreDate]) => {
     if (newCards && newCards.length > 0) {
       session.input = null;
       session.index = 0;
-      isSubmitted.value = false;
+      session.isSubmitted = false;
 
-      const filteredCards = getCards(newCards, isIgnoreDate);
+      const filteredCards = getCards(newCards, newIsIgnoreDate);
 
-      setting.questionAmount = filteredCards.length;
+      if (
+        setting.questionAmount === 0 ||
+        setting.questionAmount > filteredCards.length
+      ) {
+        setting.questionAmount = filteredCards.length;
+      }
 
-      questions.value = generateQuestions<TestQuestion>({
+      session.questions = generateQuestions<TestQuestion>({
         cards: shuffleArray(newCards).slice(0, setting.questionAmount),
         types: setting.types,
         dir: setting.direction,
@@ -134,7 +146,7 @@ function onDontKnowClicked(q: TestQuestion, qIndex: number) {
 }
 
 function onTestSubmitted() {
-  isSubmitted.value = true;
+  session.isSubmitted = true;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -142,7 +154,7 @@ function getChoiceBtnClass(q: TestQuestion, cIndex: number) {
   const isSelected = q.userChoiceIndex === cIndex;
   const isThisChoiceCorrect = q.correctChoiceIndex === cIndex;
 
-  if (!isSubmitted.value) {
+  if (!session.isSubmitted) {
     if (isSelected) {
       return 'border-primary bg-primary/10 text-primary';
     }
@@ -166,7 +178,7 @@ function getChoiceBtnClass(q: TestQuestion, cIndex: number) {
 }
 
 function getWrittenInputClass(q: TestQuestion) {
-  if (!isSubmitted.value) return '';
+  if (!session.isSubmitted) return '';
 
   if (q.isUserAnswerCorrect) {
     return 'border-success';
@@ -176,10 +188,14 @@ function getWrittenInputClass(q: TestQuestion) {
 }
 
 defineShortcuts({
-  '1': () => throttledOnChoiceSelected(0, session.index, currentQuestion.value),
-  '2': () => throttledOnChoiceSelected(1, session.index, currentQuestion.value),
-  '3': () => throttledOnChoiceSelected(2, session.index, currentQuestion.value),
-  '4': () => throttledOnChoiceSelected(3, session.index, currentQuestion.value),
+  '1': () =>
+    throttledOnChoiceSelected(0, session.index, session.currentQuestion),
+  '2': () =>
+    throttledOnChoiceSelected(1, session.index, session.currentQuestion),
+  '3': () =>
+    throttledOnChoiceSelected(2, session.index, session.currentQuestion),
+  '4': () =>
+    throttledOnChoiceSelected(3, session.index, session.currentQuestion),
 
   arrowleft: {
     handler: () => handleChangeQuestion('left'),
@@ -300,7 +316,10 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-if="questions.length" class="mb-8 flex w-full flex-col gap-2">
+    <div
+      v-if="session.questions.length"
+      class="mb-8 flex w-full flex-col gap-2"
+    >
       <h1
         class="mb-2 max-w-5/6 place-self-center truncate text-lg font-semibold sm:text-xl"
       >
@@ -308,7 +327,7 @@ onMounted(() => {
       </h1>
 
       <UCard
-        v-for="(q, qIndex) in questions"
+        v-for="(q, qIndex) in session.questions"
         :key="qIndex"
         ref="cards"
         :ui="{
@@ -331,7 +350,7 @@ onMounted(() => {
           </span>
 
           <UBadge
-            :label="`${qIndex + 1} of ${questions.length}`"
+            :label="`${qIndex + 1} of ${session.questions.length}`"
             variant="soft"
             color="neutral"
           />
@@ -359,7 +378,7 @@ onMounted(() => {
               v-for="(choice, cIndex) in q.choices"
               :key="cIndex"
               :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none disabled:opacity-70 ${getChoiceBtnClass(q, cIndex)}`"
-              :disabled="isSubmitted || q.isMarkedAsDontKnow"
+              :disabled="session.isSubmitted || q.isMarkedAsDontKnow"
               @click.stop="throttledOnChoiceSelected(cIndex, qIndex, q)"
             >
               <UBadge
@@ -382,7 +401,7 @@ onMounted(() => {
               :ui="{
                 base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 disabled:opacity-70 ${getWrittenInputClass(q)}`,
               }"
-              :disabled="isSubmitted || q.isMarkedAsDontKnow"
+              :disabled="session.isSubmitted || q.isMarkedAsDontKnow"
               variant="outline"
               color="neutral"
               @keydown.enter="handleChangeQuestion('right')"
@@ -391,7 +410,7 @@ onMounted(() => {
             />
 
             <UInput
-              v-if="!q.isUserAnswerCorrect && isSubmitted"
+              v-if="!q.isUserAnswerCorrect && session.isSubmitted"
               :ui="{
                 base: `text-lg sm:text-xl transition-all border-2 border-dashed border-success ring-0`,
               }"
@@ -415,7 +434,7 @@ onMounted(() => {
       </UCard>
 
       <UButton
-        v-if="!isSubmitted"
+        v-if="!session.isSubmitted"
         class="w-fit cursor-pointer place-self-center font-normal transition-all hover:scale-103 active:scale-98"
         label="Submit Test"
         icon="i-lucide-send-horizontal"
@@ -423,40 +442,5 @@ onMounted(() => {
         @click="onTestSubmitted"
       />
     </div>
-
-    <UEmpty
-      v-else
-      :actions="[
-        {
-          to: '/home',
-          icon: 'i-lucide-house',
-          label: 'Home',
-          color: 'success',
-          variant: 'subtle',
-          class: 'cursor-pointer hover:scale-102 hover:shadow',
-        },
-        {
-          icon: 'i-lucide-refresh-cw',
-          label: 'Restart',
-          color: 'error',
-          variant: 'outline',
-          class: 'cursor-pointer hover:scale-102 hover:shadow',
-          onClick: () => console.log('restart test'),
-        },
-        {
-          icon: 'i-lucide-fast-forward',
-          label: 'Ignore & continue',
-          color: 'neutral',
-          variant: 'subtle',
-          class: 'cursor-pointer hover:scale-102 hover:shadow',
-          onClick: () => console.log('ignore and continue'),
-        },
-      ]"
-      variant="naked"
-      icon="i-lucide-party-popper"
-      title="You're all caught up — nothing to review now."
-      description="Optimize your retention by strictly adhering to the next review date."
-      size="xl"
-    />
   </UContainer>
 </template>
