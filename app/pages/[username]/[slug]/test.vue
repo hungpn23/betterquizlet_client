@@ -24,14 +24,16 @@ let snapshotSetting = '';
 const session = reactive({
   index: 0,
   input: null as HTMLInputElement | null,
-  get element() {
-    if (!cardRefs.value) return undefined;
-
-    return cardRefs.value[this.index]?.$el as Element | undefined;
-  },
+  element: null as Element | null,
 });
 
 const currentQuestion = computed(() => questions.value[session.index]);
+
+watch([cardRefs, () => session.index], () => {
+  if (cardRefs.value) {
+    session.element = cardRefs.value[session.index]?.$el as Element;
+  }
+});
 
 watch(
   [() => store.deck?.cards, () => setting.isIgnoreDate],
@@ -56,6 +58,7 @@ watch(
 );
 
 watch(() => session.index, scrollAndFocus);
+
 watch(
   () => setting.types,
   () => {
