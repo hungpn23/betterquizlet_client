@@ -2,10 +2,9 @@
 import type { UCard } from '#components';
 import { breakpointsTailwind } from '@vueuse/core';
 
-const { token } = useAuth();
-const route = useRoute();
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual('sm');
+const store = useDeckStore();
 const cardRefs = useTemplateRef('cards');
 
 const throttledOnChoiceSelected = useThrottleFn(onChoiceSelected, 300);
@@ -16,6 +15,7 @@ const questions = ref<TestQuestion[]>([]);
 
 const setting = reactive<TestSetting>({
   questionAmount: 0,
+  isIgnoreDate: false,
   types: ['multiple_choices', 'written'],
   direction: 'term_to_def',
 });
@@ -33,53 +33,27 @@ const session = reactive({
 
 const currentQuestion = computed(() => questions.value[session.index]);
 
-const deckId = computed(() => route.query.deckId as string);
+watch(
+  [() => store.deck?.cards, () => setting.isIgnoreDate],
+  ([newCards, isIgnoreDate]) => {
+    if (newCards && newCards.length > 0) {
+      session.input = null;
+      session.index = 0;
+      isSubmitted.value = false;
 
-const deckSlug = computed(() => {
-  const slug = route.params.slug;
+      const filteredCards = getCards(newCards, isIgnoreDate);
 
-  return Array.isArray(slug) ? slug[0] : slug;
-});
+      setting.questionAmount = filteredCards.length;
 
-const username = computed(() => {
-  const n = route.params.username;
-
-  return Array.isArray(n) ? n[0] : n;
-});
-
-const {
-  data: deck,
-  status,
-  refresh,
-} = useLazyFetch<DeckWithCards>(`/api/decks/${deckId.value}`, {
-  headers: { Authorization: token.value || '' },
-  server: false,
-});
-
-watch(deck, (newDeck) => {
-  if (newDeck && newDeck.cards.length > 0) {
-    session.input = null;
-    session.index = 0;
-    isSubmitted.value = false;
-
-    if (
-      !setting.questionAmount ||
-      setting.questionAmount > newDeck.cards.length
-    )
-      setting.questionAmount = newDeck.cards.length;
-
-    questions.value = generateQuestions<TestQuestion>({
-      cards: shuffleArray(newDeck.cards).slice(0, setting.questionAmount),
-      types: setting.types,
-      dir: setting.direction,
-      answerPool: newDeck.cards.map((c) => ({
-        id: c.id,
-        term: c.term,
-        definition: c.definition,
-      })),
-    });
-  }
-});
+      questions.value = generateQuestions<TestQuestion>({
+        cards: shuffleArray(newCards).slice(0, setting.questionAmount),
+        types: setting.types,
+        dir: setting.direction,
+        answerPool: newCards,
+      });
+    }
+  },
+);
 
 watch(() => session.index, scrollAndFocus);
 watch(
@@ -126,7 +100,7 @@ async function onSettingClosed() {
   }
 
   snapshotSetting = '';
-  await refresh();
+  await store.refetch();
   scrollAndFocus();
 }
 
@@ -221,12 +195,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <SkeletonTestPage v-if="status === 'idle' || status === 'pending'" />
+  <SkeletonTestPage
+    v-if="store.status === 'idle' || store.status === 'pending'"
+  />
 
   <UContainer v-else>
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
-        :to="`/${username}/${deckSlug}?deckId=${deckId}`"
+        :to="`/${store.username}/${store.slug}?deckId=${store.deckId}`"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
         icon="i-lucide-move-left"
@@ -263,7 +239,7 @@ onMounted(() => {
           </template>
 
           <template #body>
-            <div class="flex flex-col gap-2 font-semibold">
+            <div class="flex flex-col gap-2 font-medium">
               <div class="flex place-content-between place-items-center gap-2">
                 <div>Number of questions</div>
 
@@ -272,6 +248,12 @@ onMounted(() => {
                   type="number"
                   size="lg"
                 />
+              </div>
+
+              <div class="flex place-content-between place-items-center gap-2">
+                <div>Test all questions</div>
+
+                <USwitch v-model="setting.isIgnoreDate" />
               </div>
 
               <USeparator label="Answer format" />
@@ -319,7 +301,7 @@ onMounted(() => {
       <h1
         class="mb-2 max-w-5/6 place-self-center truncate text-lg font-semibold sm:text-xl"
       >
-        {{ deck?.name || '' }}
+        {{ store.deck?.name }}
       </h1>
 
       <UCard
@@ -431,7 +413,7 @@ onMounted(() => {
 
       <UButton
         v-if="!isSubmitted"
-        class="w-fit cursor-pointer place-self-center font-medium transition-all hover:scale-103 active:scale-98"
+        class="w-fit cursor-pointer place-self-center font-normal transition-all hover:scale-103 active:scale-98"
         label="Submit Test"
         icon="i-lucide-send-horizontal"
         size="xl"

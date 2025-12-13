@@ -82,14 +82,14 @@ export type TestQuestion = Omit<LearnQuestion, 'streak' | 'reviewDate'> &
     isMarkedAsDontKnow: boolean;
   }>;
 
-export type TestSession = {
-  questions: TestQuestion[];
-  isSubmitted: boolean;
-  questionIndex: number;
-  questionInput?: HTMLInputElement | null;
-  questionElement?: Element | null;
-  question?: TestQuestion | null;
-};
+// export type TestSession = {
+//   questions: TestQuestion[];
+//   isSubmitted: boolean;
+//   questionIndex: number;
+//   questionInput?: HTMLInputElement | null;
+//   questionElement?: Element | null;
+//   question?: TestQuestion | null;
+// };
 
 export type TestSetting = {
   questionAmount: number;
