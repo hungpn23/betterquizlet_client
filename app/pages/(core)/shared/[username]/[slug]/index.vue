@@ -1,7 +1,7 @@
 <script lang="ts" setup></script>
 
 <template>
-  <h1 class="text-xl font-medium">Profile of: {{ $route.params.username }}</h1>
+  <div>Shared Detail Page</div>
 </template>
 
 <style scoped></style>

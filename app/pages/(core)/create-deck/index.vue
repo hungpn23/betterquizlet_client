@@ -161,7 +161,7 @@ async function onCreate(event: FormSubmitEvent<CreateSchema>) {
     body: event.data,
   })
     .then(() => {
-      router.push('/home');
+      router.push('/library');
 
       toast.add({
         title: 'New deck created!',
@@ -240,7 +240,7 @@ async function onError(event: FormErrorEvent) {
 <template>
   <UContainer class="space-y-2">
     <UButton
-      to="/home"
+      to="/library"
       class="cursor-pointer px-0 text-base"
       variant="link"
       icon="i-lucide-move-left"

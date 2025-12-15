@@ -221,7 +221,7 @@ onMounted(() => {
   <UContainer v-else>
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
-        :to="`/${store.username}/${store.slug}?deckId=${store.deckId}`"
+        :to="`/library/${store.slug}?deckId=${store.deckId}`"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
         icon="i-lucide-move-left"

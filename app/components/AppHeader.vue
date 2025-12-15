@@ -13,12 +13,12 @@ const isDarkMode = computed(() => colorMode.value === 'dark');
 
 const items = computed<NavigationMenuItem[]>(() => [
   {
-    label: 'Home',
-    to: '/home',
+    label: 'Library',
+    to: '/library',
   },
   {
-    label: 'Community',
-    to: '/community',
+    label: 'Shared',
+    to: '/shared',
   },
   {
     label: 'Forum',

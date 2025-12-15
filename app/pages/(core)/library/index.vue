@@ -64,7 +64,7 @@ function getDeckProgress(deck: DeckWithStats) {
 </script>
 
 <template>
-  <SkeletonHomePage v-if="status === 'idle' || status === 'pending'" />
+  <SkeletonLibraryPage v-if="status === 'idle' || status === 'pending'" />
 
   <UContainer v-else>
     <UPageHeader
@@ -162,15 +162,19 @@ function getDeckProgress(deck: DeckWithStats) {
           <NuxtLink
             v-for="d in paginated.data"
             :key="d.id"
-            :to="`/${user?.username}/${d.slug}?deckId=${d.id}`"
+            :to="`/library/${d.slug}?deckId=${d.id}`"
           >
             <UCard
-              class="hover:bg-elevated cursor-pointer shadow-md transition-all hover:scale-101"
+              :ui="{ body: 'space-y-2' }"
+              class="hover:bg-elevated shadow-md transition-all hover:scale-101"
               variant="subtle"
             >
-              <div class="grid grid-cols-1 sm:grid-cols-2">
-                <div class="flex place-items-center gap-1.5">
-                  <h4 class="max-w-5/6 truncate font-medium sm:text-lg">
+              <!-- Title -->
+              <div
+                class="flex flex-col sm:flex-row sm:place-items-center sm:gap-8"
+              >
+                <div class="flex min-w-0 flex-1 place-items-center gap-1.5">
+                  <h4 class="truncate font-medium sm:text-lg">
                     {{ d.name }}
                   </h4>
 
@@ -189,7 +193,7 @@ function getDeckProgress(deck: DeckWithStats) {
                 </div>
               </div>
 
-              <div class="mt-2 flex place-items-center gap-2 sm:gap-4">
+              <div class="mt-4 flex place-items-center gap-2 sm:gap-4">
                 <UTooltip :delay-duration="200" text="Total cards">
                   <UBadge
                     :label="d.stats.total"
@@ -227,7 +231,7 @@ function getDeckProgress(deck: DeckWithStats) {
                 </UTooltip>
               </div>
 
-              <UProgress :model-value="getDeckProgress(d)" class="mt-4" />
+              <UProgress :model-value="getDeckProgress(d)" />
             </UCard>
           </NuxtLink>
         </TransitionGroup>

@@ -38,7 +38,7 @@ onMounted(async () => {
         color: 'success',
       });
 
-      await navigateTo('/home');
+      await navigateTo('/library');
     })
     .catch(async (error: ErrorResponse) => {
       console.error('Exchange token error:', error);
@@ -58,9 +58,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div
-    class="grid flex-1 place-content-center place-items-center gap-4 place-self-center"
-  >
+  <div class="flex flex-col place-items-center gap-4">
     <UIcon
       class="text-primary h-12 w-12 animate-spin"
       name="i-lucide-loader-2"

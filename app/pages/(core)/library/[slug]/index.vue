@@ -63,17 +63,17 @@ const studyOptions = computed(() => [
   {
     label: 'Flashcards',
     icon: 'i-lucide-gallery-horizontal-end',
-    to: `/${store.username}/${store.slug}/flashcards?deckId=${store.deckId}`,
+    to: `/library/${store.slug}/flashcards?deckId=${store.deckId}`,
   },
   {
     label: 'Learn',
     icon: 'i-lucide-notebook-pen',
-    to: `/${store.username}/${store.slug}/learn?deckId=${store.deckId}`,
+    to: `/library/${store.slug}/learn?deckId=${store.deckId}`,
   },
   {
     label: 'Test',
     icon: 'i-lucide-flask-conical',
-    to: `/${store.username}/${store.slug}/test?deckId=${store.deckId}`,
+    to: `/library/${store.slug}/test?deckId=${store.deckId}`,
   },
   {
     label: 'Coming soon',
@@ -120,7 +120,7 @@ async function onDelete() {
     method: 'DELETE',
     headers: { Authorization: token.value || '' },
   })
-    .then(() => router.push(`/home`))
+    .then(() => router.push(`/library`))
     .catch((error: ErrorResponse) => {
       toast.add({
         title: 'Error deleting deck',
@@ -253,7 +253,7 @@ defineShortcuts({
   <UPage v-else>
     <UContainer>
       <UButton
-        to="/home"
+        to="/library"
         class="hover:text-primary mt-2 cursor-pointer px-0 text-base hover:underline"
         variant="link"
         icon="i-lucide-move-left"
@@ -369,7 +369,7 @@ defineShortcuts({
               <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 <div class="col-span-1">
                   <UButton
-                    :to="`/${store.username}`"
+                    :to="`/${user?.username}`"
                     variant="link"
                     color="neutral"
                     class="w-fit p-0"
@@ -383,7 +383,7 @@ defineShortcuts({
                         </p>
 
                         <p class="text-highlighted text-base font-medium">
-                          {{ store.username }}
+                          {{ user!.username }}
                         </p>
                       </div>
                     </div>
@@ -452,7 +452,7 @@ defineShortcuts({
               v-else
               :actions="[
                 {
-                  to: '/home',
+                  to: '/library',
                   icon: 'i-lucide-house',
                   label: 'Home',
                   color: 'success',
@@ -500,6 +500,7 @@ defineShortcuts({
             </UFormField>
 
             <UFormField
+              v-if="store.deck?.description"
               :class="`${isEditing ? 'mt-3' : ''}`"
               name="description"
             >

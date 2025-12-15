@@ -13,9 +13,10 @@ const {
   data: paginated,
   error,
   status,
-} = await useFetch<Paginated<PublicDeck>, ErrorResponse>('/api/decks/public', {
+} = useLazyFetch<Paginated<PublicDeck>, ErrorResponse>('/api/decks/public', {
   query,
   headers: { Authorization: token.value || '' },
+  server: false,
 });
 
 watch(error, (newErr) => {
@@ -45,22 +46,24 @@ watch(error, (newErr) => {
 
     <div
       v-if="paginated && paginated.metadata.totalRecords > 0"
-      class="flex flex-col gap-2 sm:gap-4"
+      class="flex flex-col gap-3"
     >
       <TransitionGroup name="list" appear>
         <NuxtLink
           v-for="d in paginated.data"
           :key="d.id"
-          :to="`/${d.owner.username}/${d.slug}?deckId=${d.id}`"
+          :to="`/shared/${d.owner.username}/${d.slug}?deckId=${d.id}`"
         >
           <UCard
-            :ui="{ body: 'space-y-6' }"
-            class="hover:bg-elevated cursor-pointer shadow-md transition-all hover:scale-101"
+            :ui="{ body: 'space-y-4' }"
+            class="hover:bg-elevated shadow-md transition-all hover:scale-101"
             variant="subtle"
           >
-            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <div class="flex place-items-center gap-1.5">
-                <h4 class="max-w-5/6 truncate font-medium sm:text-lg">
+            <div
+              class="flex flex-col sm:flex-row sm:place-items-center sm:gap-8"
+            >
+              <div class="flex min-w-0 flex-1 place-items-center gap-1.5">
+                <h4 class="truncate font-medium sm:text-lg">
                   {{ d.name }}
                 </h4>
 
@@ -71,11 +74,11 @@ watch(error, (newErr) => {
               </div>
 
               <div
-                class="flex place-content-start place-items-center gap-2 sm:place-content-end"
+                class="flex place-content-start place-items-center gap-1.5 sm:place-content-end"
               >
                 <UTooltip :delay-duration="200" text="Total cards">
                   <UBadge
-                    label="123"
+                    :label="d.totalCards"
                     variant="outline"
                     color="neutral"
                     icon="i-lucide-gallery-horizontal-end"
@@ -84,7 +87,7 @@ watch(error, (newErr) => {
 
                 <UTooltip :delay-duration="200" text="Views">
                   <UBadge
-                    label="364"
+                    label="1"
                     icon="i-lucide-eye"
                     variant="outline"
                     color="neutral"
@@ -103,18 +106,20 @@ watch(error, (newErr) => {
             </div>
 
             <UButton
-              :to="`/${d.owner.username}`"
+              class="w-fit cursor-pointer p-0"
               variant="ghost"
               color="neutral"
-              class="w-fit p-0"
             >
               <div class="flex place-items-center gap-2">
                 <UAvatar :src="d.owner.avatarUrl || ''" />
 
                 <div class="flex flex-col">
-                  <p class="text-sm font-medium sm:text-base">
+                  <NuxtLink
+                    :to="`/shared/${d.owner.username}`"
+                    class="cursor-default place-self-start text-sm font-medium hover:underline sm:text-base"
+                  >
                     {{ d.owner.username }}
-                  </p>
+                  </NuxtLink>
 
                   <p class="text-muted text-sm font-normal">
                     {{ `Created ${formatTimeAgo(new Date(d.createdAt))}` }}

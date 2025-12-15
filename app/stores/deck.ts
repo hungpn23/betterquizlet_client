@@ -2,29 +2,15 @@ import { defineStore, acceptHMRUpdate } from 'pinia';
 
 export const useDeckStore = defineStore('deck', () => {
   // --- Composables ---
+  // const router = useRouter();
   const route = useRoute();
-  const { token, data: user } = useAuth();
+  const { token } = useAuth();
   const toast = useToast();
 
   // --- State ---
   const isIgnoreDate = ref(false);
-
-  // --- Getters ---
-  const deckId = computed(() => route.query.deckId as string | undefined);
-
-  const slug = computed(() => {
-    const s = route.params.slug;
-    return Array.isArray(s) ? s[0] : s;
-  });
-
-  const username = computed(() => {
-    const n = route.params.username;
-    return Array.isArray(n) ? n[0] : n;
-  });
-
-  const isOwner = computed(() => {
-    return user.value?.username === username.value;
-  });
+  const deckId = ref<string>('');
+  const slug = ref<string>('');
 
   // --- Define fetch composable ---
   const {
@@ -40,14 +26,27 @@ export const useDeckStore = defineStore('deck', () => {
       server: false,
       immediate: false,
       watch: false, // handled manually
+
+      onResponseError: ({ response }) => {
+        if (response.status === 404) {
+          showError({
+            statusCode: 404,
+            message: 'Deck not found.',
+          });
+        }
+      },
     },
   );
 
   // --- Watchers ---
   watchImmediate(
-    () => route.fullPath,
+    () => route.name,
     async () => {
-      if (deckId.value) await execute();
+      if (route.name === 'library-slug') {
+        deckId.value = route.query.deckId as string;
+        slug.value = route.params.slug as string;
+        await execute();
+      }
     },
   );
 
@@ -106,8 +105,6 @@ export const useDeckStore = defineStore('deck', () => {
     // Getters
     deckId,
     slug,
-    username,
-    isOwner,
 
     // Actions
     refetch,

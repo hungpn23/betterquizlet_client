@@ -270,7 +270,7 @@ defineShortcuts({
   <UContainer v-else>
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
-        :to="`/${store.username}/${store.slug}/flashcards?deckId=${store.deckId}`"
+        :to="`/library/${store.slug}/flashcards?deckId=${store.deckId}`"
         :label="smAndLarger ? 'Back to Flashcards' : 'Flashcards'"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
@@ -278,7 +278,7 @@ defineShortcuts({
       />
 
       <UButton
-        :to="`/${store.username}/${store.slug}/test?deckId=${store.deckId}`"
+        :to="`/library/${store.slug}/test?deckId=${store.deckId}`"
         :label="smAndLarger ? 'Go to Test' : 'Test'"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
@@ -345,7 +345,7 @@ defineShortcuts({
         <div class="flex w-full place-content-between place-items-center">
           <span class="flex place-items-center gap-1 font-medium">
             <UButton
-              class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2 pl-0"
+              class="hover:text-primary ml-0 cursor-pointer rounded-full bg-inherit p-2"
               icon="i-lucide-volume-2"
               variant="soft"
               color="neutral"
@@ -358,7 +358,7 @@ defineShortcuts({
           </span>
 
           <UButton
-            class="cursor-pointer pr-0"
+            class="mr-0 cursor-pointer"
             icon="i-lucide-lightbulb"
             :variant="smAndLarger ? 'soft' : 'ghost'"
             color="neutral"
@@ -463,7 +463,7 @@ defineShortcuts({
         </template>
       </UCard>
 
-      <USeparator />
+      <USeparator v-if="!smAndLarger" />
 
       <div class="grid grid-cols-3 gap-2">
         <div />
@@ -597,7 +597,7 @@ defineShortcuts({
       v-else
       :actions="[
         {
-          to: '/home',
+          to: '/library',
           icon: 'i-lucide-house',
           label: 'Home',
           color: 'success',

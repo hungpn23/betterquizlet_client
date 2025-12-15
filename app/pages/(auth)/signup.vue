@@ -35,9 +35,11 @@ const providers = [
 ];
 
 function onSubmit(payload: FormSubmitEvent<SignUpSchema>) {
-  signUp(payload.data, { callbackUrl: '/home' }).catch((_: ErrorResponse) => {
-    toast.add({ title: 'Login failed' });
-  });
+  signUp(payload.data, { callbackUrl: '/library' }).catch(
+    (_: ErrorResponse) => {
+      toast.add({ title: 'Login failed' });
+    },
+  );
 }
 </script>
 

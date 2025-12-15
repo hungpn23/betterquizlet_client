@@ -57,7 +57,7 @@ defineShortcuts({
   <UContainer v-else>
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
-        :to="`/${store.username}/${store.slug}?deckId=${store.deckId}`"
+        :to="`/library/${store.slug}?deckId=${store.deckId}`"
         :label="smAndLarger ? 'Back to Home' : 'Home'"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
@@ -65,7 +65,7 @@ defineShortcuts({
       />
 
       <UButton
-        :to="`/${store.username}/${store.slug}/learn?deckId=${store.deckId}`"
+        :to="`/library/${store.slug}/learn?deckId=${store.deckId}`"
         :label="smAndLarger ? 'Go to Learn' : 'Learn'"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
@@ -209,7 +209,7 @@ defineShortcuts({
       v-else
       :actions="[
         {
-          to: '/home',
+          to: '/library',
           icon: 'i-lucide-house',
           label: 'Home',
           color: 'success',
