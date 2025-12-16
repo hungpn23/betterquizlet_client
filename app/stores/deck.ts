@@ -16,7 +16,6 @@ export const useDeckStore = defineStore('deck', () => {
   const {
     data: deck,
     status,
-    error,
     refresh: refetch,
     execute,
   } = useLazyFetch<DeckWithCards, ErrorResponse>(
@@ -41,26 +40,17 @@ export const useDeckStore = defineStore('deck', () => {
   // --- Watchers ---
   watchImmediate(
     () => route.name,
-    async () => {
-      if (route.name === 'library-slug') {
+    async (newName) => {
+      const newNameStr = newName?.toString() || '';
+
+      if (newNameStr.includes('library-slug')) {
         deckId.value = route.query.deckId as string;
         slug.value = route.params.slug as string;
+
         await execute();
       }
     },
   );
-
-  watch(status, () => {
-    if (status.value === 'error') {
-      toast.add({
-        title: 'Error fetching deck.',
-        description: JSON.stringify(
-          error.value?.data?.message || 'Unknown error.',
-        ),
-        color: 'error',
-      });
-    }
-  });
 
   // --- Actions ---
   async function restartDeck() {
