@@ -19,14 +19,11 @@ export const cardSchema = v.object({
   status: v.picklist(['known', 'learning', 'new'] as const),
 });
 
-export type CardStatus = 'known' | 'learning' | 'new';
-
 export type Card = v.InferOutput<typeof cardSchema>;
-
-export type Answer = Pick<Card, 'id' | 'streak' | 'reviewDate'>;
 
 export type CardToSave = Pick<Card, 'id' | 'streak' | 'reviewDate'>;
 
+// --- FLASHCARD ---
 export type FlashcardSession = {
   currentCard?: Card | null;
   cardsToSave: CardToSave[];
@@ -38,9 +35,7 @@ export type FlashcardSession = {
   skippedCount: number;
 };
 
-export type QuestionType = 'multiple_choices' | 'written';
-export type QuestionDirection = 'term_to_def' | 'def_to_term' | 'both';
-
+// --- LEARN ---
 export type LearnQuestion = Pick<Card, 'id' | 'streak' | 'reviewDate'> & {
   type: QuestionType;
   direction: QuestionDirection;
@@ -75,6 +70,7 @@ export type LearnSetting = {
   direction: QuestionDirection;
 };
 
+// --- TEST ---
 export type TestQuestion = Omit<LearnQuestion, 'streak' | 'reviewDate'> &
   Partial<{
     userAnswer: string;
@@ -98,3 +94,8 @@ export type TestSetting = {
   types: QuestionType[];
   direction: QuestionDirection;
 };
+
+// --- COMMON ---
+export type CardStatus = 'known' | 'learning' | 'new';
+export type QuestionType = 'multiple_choices' | 'written';
+export type QuestionDirection = 'term_to_def' | 'def_to_term' | 'both';

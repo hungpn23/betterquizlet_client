@@ -24,7 +24,7 @@ const formErrorMsg = ref('');
 const isEditing = ref(false);
 const isSavingChanges = ref(false);
 
-const state = reactive<Partial<DeckFormState>>({});
+const state = reactive<Partial<UpdateDeck>>({});
 
 const settingOptions = computed<DropdownMenuItem[][]>(() => [
   [
@@ -189,7 +189,7 @@ function cancelEditing() {
   });
 }
 
-function resetFormState(deck?: DeckWithCards) {
+function resetFormState(deck?: GetOneRes) {
   if (deck) {
     state.name = deck.name;
     state.description = deck.description || '';
@@ -262,7 +262,7 @@ defineShortcuts({
 
       <UForm
         ref="form"
-        :schema="deckSchema"
+        :schema="updateDeckSchema"
         :state="state"
         @submit="onSubmit"
         @error="onSubmitError"
@@ -376,7 +376,12 @@ defineShortcuts({
                     class="w-fit p-0"
                   >
                     <div class="flex place-items-center gap-2">
-                      <UAvatar :ui="{ fallback: 'uppercase' }" :src="user.avatarUrl || ''" :alt="user.username" size="xl" />
+                      <UAvatar
+                        :ui="{ fallback: 'uppercase' }"
+                        :src="user.avatarUrl || ''"
+                        :alt="user.username"
+                        size="xl"
+                      />
 
                       <div class="flex flex-col">
                         <p class="text-muted text-sm font-normal text-pretty">

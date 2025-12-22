@@ -36,7 +36,7 @@ const {
   data: paginated,
   error,
   status,
-} = useLazyFetch<Paginated<DeckWithStats>, ErrorResponse>('/api/decks', {
+} = useLazyFetch<Paginated<GetManyRes>, ErrorResponse>('/api/decks', {
   query,
   headers: { Authorization: token.value || '' },
   server: false,
@@ -53,7 +53,7 @@ watch([error, userStatsError], (newErr) => {
   if (newErr) toast.add({ title: 'Error fetching decks' });
 });
 
-function getDeckProgress(deck: DeckWithStats) {
+function getDeckProgress(deck: GetManyRes) {
   const total = deck.stats.total;
   const known = deck.stats.known;
 

@@ -1,4 +1,12 @@
 <script setup lang="ts">
+definePageMeta({
+  auth: false,
+});
+
+const route = useRoute();
+const toast = useToast();
+const { token } = useAuth();
+
 const studyOptions = computed(() => [
   {
     label: 'Flashcards',
@@ -21,6 +29,19 @@ const studyOptions = computed(() => [
     to: `#`,
   },
 ]);
+
+const { data: _deck, error } = await useFetch<undefined, ErrorResponse>(
+  `/api/decks/shared/${route.query.deckId}`,
+  {
+    headers: { Authorization: token.value || '' },
+  },
+);
+
+watchImmediate(error, (newErr) => {
+  if (newErr) {
+    toast.add({ title: newErr.data?.message });
+  }
+});
 </script>
 
 <template>
@@ -47,9 +68,10 @@ const studyOptions = computed(() => [
           v-for="{ label, icon, to } in studyOptions"
           :key="label"
           :to="to"
-          class="hover:ring-primary hover:text-primary hover:bg-primary/10 flex place-content-center place-items-center py-3 transition-all hover:scale-102 hover:shadow"
+          class="flex place-content-center place-items-center py-3"
           variant="subtle"
           color="neutral"
+          disabled
         >
           <UIcon v-if="icon" :name="icon" class="size-5" />
 
@@ -80,15 +102,6 @@ const studyOptions = computed(() => [
               <!-- {{ !isFlipped ? 'Term' : 'Definition' }} -->
               Term
             </span>
-
-            <!-- <CardStatusBadge :card="session.currentCard" /> -->
-            <UBadge
-              label="known"
-              color="success"
-              icon="i-lucide-graduation-cap"
-              class="capitalize"
-              variant="subtle"
-            />
           </div>
 
           <div class="text-center text-2xl font-semibold sm:px-8 sm:text-3xl">
@@ -128,37 +141,23 @@ const studyOptions = computed(() => [
           <div
             class="order-first col-span-full flex place-content-center place-items-center gap-3 sm:order-0 sm:col-span-1"
           >
-            <UTooltip
-              :delay-duration="200"
-              :kbds="['arrowleft']"
-              text="Skip this card"
-            >
-              <UButton
-                label="Skip"
-                icon="i-heroicons-x-mark"
-                size="lg"
-                variant="subtle"
-                color="error"
-                class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
-              />
-              <!-- @click="throttledHandleAnswer(false)" -->
-            </UTooltip>
+            <UButton
+              label="Skip"
+              icon="i-heroicons-x-mark"
+              size="lg"
+              variant="subtle"
+              color="error"
+              disabled
+            />
 
-            <UTooltip
-              :delay-duration="200"
-              :kbds="['arrowright']"
-              text="Next card"
-            >
-              <UButton
-                label="Next"
-                icon="i-heroicons-check"
-                size="lg"
-                variant="subtle"
-                color="success"
-                class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
-              />
-              <!-- @click="throttledHandleAnswer(true)" -->
-            </UTooltip>
+            <UButton
+              label="Next"
+              icon="i-heroicons-check"
+              size="lg"
+              variant="subtle"
+              color="success"
+              disabled
+            />
           </div>
         </div>
       </div>

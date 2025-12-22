@@ -1,11 +1,10 @@
+import type { Visibility } from '~/utils/enums';
 import type { UUID } from './branded';
-import type { PaginationQuery } from './pagination';
 import { cardSchema, type Card } from './card';
 import type { User } from './user';
 import * as v from 'valibot';
-import type { Visibility } from '~/utils/enums';
 
-export const deckSchema = v.object({
+export const updateDeckSchema = v.object({
   name: v.pipe(v.string(), v.minLength(1, 'Name is required')),
   description: v.string(),
   cards: v.pipe(
@@ -14,15 +13,17 @@ export const deckSchema = v.object({
   ),
 });
 
+export type UpdateDeck = v.InferOutput<typeof updateDeckSchema>;
+
 export type Deck = {
   id: UUID;
   name: string;
   slug: string;
-  description?: string;
+  description?: string | null;
   visibility: Visibility;
   learnerCount: number;
-  clonedFrom?: Deck | null;
-  openedAt?: string;
+  clonedFrom?: Pick<Deck, 'id' | 'name'> | null;
+  openedAt?: string | null;
   createdAt: string;
 };
 
@@ -33,40 +34,33 @@ export type DeckStats = {
   new: number;
 };
 
-export type DeckWithCards = Deck & {
+export type GetOneRes = Pick<Deck, 'id' | 'name' | 'slug' | 'description'> & {
   cards: Card[];
+};
+
+export type GetManyRes = Pick<
+  Deck,
+  'id' | 'name' | 'slug' | 'visibility' | 'openedAt'
+> & {
   stats: DeckStats;
 };
 
-export type DeckWithStats = Deck & {
-  stats: DeckStats;
-};
-
-export type PublicDeck = Deck & {
+// --- SHARED ---
+export type GetSharedOneRes = Pick<Deck, 'id' | 'name' | 'description'> & {
   totalCards: number;
-  owner: User;
+  cards: Pick<Card, 'term' | 'definition'>[];
 };
 
-export type UserStats = {
-  currentStreak: number;
-  longestStreak: number;
-  totalCardsLearned: number;
-  masteryRate: number;
+export type GetSharedManyRes = Pick<
+  Deck,
+  'id' | 'name' | 'slug' | 'visibility' | 'learnerCount' | 'createdAt'
+> & {
+  totalCards: number;
+  owner: Pick<User, 'id' | 'username' | 'avatarUrl'>;
 };
 
-export type DeckFormState = v.InferOutput<typeof deckSchema>;
-
-export type DeckOrderBy = 'createdAt' | 'updatedAt' | 'openedAt' | 'name';
-
-export type DeckPaginationQuery = PaginationQuery & {
-  orderBy?: DeckOrderBy;
-};
-
-export type CreateDeckRes = Pick<Deck, 'id' | 'slug'>;
-
-export type ContentSeparator = 'tab' | 'comma' | 'custom';
-
-export type CardSeparator = 'new_line' | 'semicolon' | 'custom';
+// --- SEARCH ---
+export type DeckOrderBy = 'createdAt' | 'openedAt' | 'name';
 
 export type DeckUrlParams = {
   page: string;
@@ -74,3 +68,10 @@ export type DeckUrlParams = {
   search: string;
   filter: string;
 };
+
+// --- CREATE ---
+export type ContentSeparator = 'tab' | 'comma' | 'custom';
+
+export type CardSeparator = 'new_line' | 'semicolon' | 'custom';
+
+export type CreateDeckRes = Pick<Deck, 'id' | 'slug'>;

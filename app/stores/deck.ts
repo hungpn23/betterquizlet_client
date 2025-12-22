@@ -17,7 +17,7 @@ export const useDeckStore = defineStore('deck', () => {
     status,
     refresh: refetch,
     execute,
-  } = useLazyFetch<DeckWithCards, ErrorResponse>(
+  } = useLazyFetch<GetOneRes, ErrorResponse>(
     () => `/api/decks/${deckId.value}`,
     {
       headers: { Authorization: token.value || '' },

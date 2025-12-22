@@ -23,11 +23,11 @@ const totalRecords = computed(
 
 const query = computed(() => ({
   ...searchQuery.value,
-  userId: user.value?.id,
+  ownerId: user.value?.id,
 }));
 
 const { data: paginated, error } = await useFetch<
-  Paginated<PublicDeck>,
+  Paginated<GetSharedManyRes>,
   ErrorResponse
 >('/api/decks/shared', {
   query,

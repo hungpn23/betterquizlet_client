@@ -11,3 +11,10 @@ export type User = {
   createdAt: Date;
   updatedAt?: Date | null;
 };
+
+export type UserStats = {
+  currentStreak: number;
+  longestStreak: number;
+  totalCardsLearned: number;
+  masteryRate: number;
+};
