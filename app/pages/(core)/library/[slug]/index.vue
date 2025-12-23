@@ -275,7 +275,7 @@ defineShortcuts({
                 v-for="{ label, icon, to } in studyOptions"
                 :key="label"
                 :to="to"
-                class="hover:ring-primary hover:text-primary hover:bg-primary/10 flex place-content-center place-items-center py-3 transition-all hover:scale-102 hover:shadow"
+                class="hover:ring-primary hover:text-primary hover:bg-primary/10 active:bg-primary/10 flex place-content-center place-items-center py-3 transition-all hover:scale-102 hover:shadow"
                 variant="subtle"
                 color="neutral"
               >
@@ -370,27 +370,30 @@ defineShortcuts({
                 <div class="col-span-1">
                   <UButton
                     v-if="user"
-                    :to="`/${user.username}`"
-                    variant="link"
+                    class="w-fit p-0 hover:bg-inherit active:bg-inherit"
+                    variant="ghost"
                     color="neutral"
-                    class="w-fit p-0"
                   >
                     <div class="flex place-items-center gap-2">
                       <UAvatar
                         :ui="{ fallback: 'uppercase' }"
                         :src="user.avatarUrl || ''"
                         :alt="user.username"
+                        class="cursor-pointer"
                         size="xl"
                       />
 
-                      <div class="flex flex-col">
+                      <div class="flex flex-col place-items-start">
                         <p class="text-muted text-sm font-normal text-pretty">
                           Created by
                         </p>
 
-                        <p class="text-base font-medium">
+                        <NuxtLink
+                          :to="`/${user.username}`"
+                          class="cursor-default text-base font-medium hover:underline"
+                        >
                           {{ user.username }}
-                        </p>
+                        </NuxtLink>
                       </div>
                     </div>
                   </UButton>
@@ -432,9 +435,11 @@ defineShortcuts({
                   </UTooltip>
                 </div>
 
-                <div class="col-span-1 flex place-content-end gap-2">
+                <div
+                  class="col-span-1 flex place-content-end place-items-center gap-1"
+                >
                   <UButton
-                    class="cursor-pointer transition-all active:scale-80"
+                    class="h-fit cursor-pointer transition-all active:scale-80"
                     color="neutral"
                     icon="i-lucide-shuffle"
                     variant="ghost"
@@ -444,7 +449,7 @@ defineShortcuts({
 
                   <UDropdownMenu :items="settingOptions">
                     <UButton
-                      class="cursor-pointer"
+                      class="h-fit cursor-pointer"
                       color="neutral"
                       icon="i-lucide-settings"
                       variant="ghost"
@@ -498,7 +503,7 @@ defineShortcuts({
                 v-model="state.name"
                 :disabled="!isEditing"
                 :ui="{
-                  base: `${!isEditing ? 'p-0' : ''} text-lg font-semibold text-pretty sm:text-xl disabled:opacity-100 disabled:cursor-default`,
+                  base: `${!isEditing ? 'p-0' : ''} bg-elevated/50 text-lg font-semibold text-pretty sm:text-xl disabled:opacity-100 disabled:cursor-default`,
                 }"
                 :variant="isEditing ? 'subtle' : 'ghost'"
                 class="w-full"
@@ -517,7 +522,7 @@ defineShortcuts({
                 :maxrows="10"
                 :disabled="!isEditing"
                 :ui="{
-                  base: `${!isEditing ? 'p-0' : ''} text-muted text-base font-normal text-pretty disabled:opacity-100 disabled:cursor-default`,
+                  base: `${!isEditing ? 'p-0' : ''} bg-elevated/50 text-base font-normal text-pretty disabled:opacity-100 disabled:cursor-default disabled:text-muted`,
                 }"
                 :variant="isEditing ? 'subtle' : 'ghost'"
                 class="w-full"

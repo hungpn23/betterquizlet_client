@@ -399,7 +399,7 @@ onMounted(() => {
             <UInput
               v-model="q.userAnswer"
               :ui="{
-                base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 disabled:opacity-70 ${getWrittenInputClass(q)}`,
+                base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 ring-transparent disabled:opacity-70 ${getWrittenInputClass(q)}`,
               }"
               :disabled="session.isSubmitted || q.isMarkedAsDontKnow"
               variant="outline"
@@ -435,7 +435,7 @@ onMounted(() => {
 
       <UButton
         v-if="!session.isSubmitted"
-        class="w-fit cursor-pointer place-self-center font-normal transition-all hover:scale-103 active:scale-98"
+        class="hover:bg-primary w-fit cursor-pointer place-self-center font-normal transition-all hover:scale-103 active:scale-98"
         label="Submit Test"
         icon="i-lucide-send-horizontal"
         size="xl"

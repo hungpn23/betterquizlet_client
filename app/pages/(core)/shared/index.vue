@@ -25,7 +25,7 @@ const totalRecords = computed(
 
 const query = computed(() => ({
   ...searchQuery.value,
-  ownerId: user.value?.id,
+  visitorId: user.value?.id,
 }));
 
 const { data: paginated, error } = await useFetch<

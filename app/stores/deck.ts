@@ -42,7 +42,7 @@ export const useDeckStore = defineStore('deck', () => {
     async (newName) => {
       const newNameStr = newName?.toString() || '';
 
-      if (newNameStr.includes('library-slug')) {
+      if (newNameStr === 'library-slug') {
         deckId.value = route.query.deckId as string;
         slug.value = route.params.slug as string;
 

@@ -2,6 +2,7 @@
 import { breakpointsTailwind } from '@vueuse/core';
 
 const { token } = useAuth();
+const toast = useToast();
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual('sm');
 const store = useDeckStore();
@@ -172,9 +173,13 @@ async function saveAnswers() {
     body: { answers: answersToSave },
   })
     .then(() => (session.cardsToSave = []))
-    .catch((error: ErrorResponse) => {
-      console.error('Save answers fail!', error.data);
-    })
+    .catch((error: ErrorResponse) =>
+      toast.add({
+        title: 'Save answers fail!',
+        description: error.data?.message || 'Please try again later.',
+        color: 'error',
+      }),
+    )
     .finally(() => (session.isSavingAnswers = false));
 }
 
@@ -550,7 +555,7 @@ defineShortcuts({
               size="lg"
               @click="isSettingOpen = true"
             />
-            
+
             <template #title>
               <h2 class="text-xl font-semibold sm:text-2xl">Learn settings</h2>
             </template>

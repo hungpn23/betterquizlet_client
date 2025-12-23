@@ -91,6 +91,7 @@ defineShortcuts({
             },
           ]"
           :orientation="smAndLarger ? 'horizontal' : 'vertical'"
+          :ui="{ icon: 'place-self-start' }"
           title="Attention!"
           description="Add this deck to your library for learning."
           icon="i-lucide-terminal"
@@ -154,7 +155,7 @@ defineShortcuts({
 
                   <NuxtLink
                     :to="`/shared/${deck.owner.username}`"
-                    class="cursor-default text-base font-medium hover:underline sm:text-base"
+                    class="cursor-default text-base font-medium hover:underline"
                   >
                     {{ deck.owner.username }}
                   </NuxtLink>
