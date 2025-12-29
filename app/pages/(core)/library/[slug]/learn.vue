@@ -41,14 +41,6 @@ const setting = reactive<LearnSetting>({
 let snapshotSetting = '';
 
 const isIncorrect = computed(() => state.isCorrect === false);
-const correctChoiceExist = computed(() => {
-  const q = session.currentQuestion;
-
-  return (
-    q?.type === 'multiple_choices' &&
-    (!!q.correctChoiceIndex || q.correctChoiceIndex === 0)
-  );
-});
 
 const progress = computed(() => {
   if (!session.totalQuestions) return 0;
@@ -531,8 +523,8 @@ defineShortcuts({
 
           or
           <AppKbd
-            v-if="correctChoiceExist"
-            :label="session.currentQuestion.correctChoiceIndex! + 1"
+            v-if="session.currentQuestion.correctChoiceIndex > -1"
+            :label="session.currentQuestion.correctChoiceIndex + 1"
           />
           to continue.
         </div>

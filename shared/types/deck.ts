@@ -47,7 +47,10 @@ export type GetManyRes = Pick<
 };
 
 // --- SHARED ---
-export type GetSharedOneRes = Pick<Deck, 'id' | 'name' | 'description'> & {
+export type GetSharedOneRes = Pick<
+  Deck,
+  'id' | 'name' | 'description' | 'visibility'
+> & {
   totalCards: number;
   owner: Owner;
   cards: PreviewCard[];

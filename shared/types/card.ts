@@ -43,8 +43,8 @@ export type LearnQuestion = Pick<Card, 'id' | 'streak' | 'reviewDate'> & {
   direction: QuestionDirection;
   question: string;
   correctAnswer: string;
-  choices?: string[];
-  correctChoiceIndex?: number;
+  choices: string[];
+  correctChoiceIndex: number;
 };
 
 export type LearnSession = {

@@ -1,0 +1,38 @@
+import { io, type Socket } from 'socket.io-client';
+
+declare module '#app' {
+  interface NuxtApp {
+    $socket: Socket;
+  }
+}
+
+declare module 'vue' {
+  interface ComponentCustomProperties {
+    $socket: Socket;
+  }
+}
+
+export default defineNuxtPlugin(() => {
+  const { token } = useAuth();
+
+  const socket = io('http://localhost:3001/notifications', {
+    extraHeaders: { Authorization: token.value || '' },
+    withCredentials: true,
+  });
+
+  socket.on('connect', () => {
+    socket.on('socketConnected', (message: string) => {
+      console.log('Server message:', message);
+    });
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Disconnected from Socket.IO server!');
+  });
+
+  socket.on('connect_error', (error) => {
+    console.error('Socket.IO connection error:', error);
+  });
+
+  return { provide: { socket } };
+});

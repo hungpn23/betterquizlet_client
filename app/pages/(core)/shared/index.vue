@@ -1,9 +1,21 @@
 <script lang="ts" setup>
+import type { FormSubmitEvent } from '@nuxt/ui';
 import { formatTimeAgo } from '@vueuse/core';
+import * as v from 'valibot';
+import { Visibility } from '~/utils/enums';
 
 definePageMeta({
   auth: false,
 });
+
+const schema = v.object({
+  passcode: v.pipe(
+    v.string(),
+    v.minLength(4, 'Passcode must be at least 4 characters'),
+  ),
+});
+
+type Schema = v.InferOutput<typeof schema>;
 
 const router = useRouter();
 const toast = useToast();
@@ -19,6 +31,13 @@ const {
 
 const input = useTemplateRef('input');
 
+const isModalOpen = ref(false);
+const deckId = ref<UUID | null>(null);
+
+const state = reactive<Schema>({
+  passcode: '',
+});
+
 const totalRecords = computed(
   () => paginated.value?.metadata.totalRecords || 0,
 );
@@ -33,29 +52,55 @@ const { data: paginated, error } = await useFetch<
   ErrorResponse
 >('/api/decks/shared', {
   query,
+  headers: { Authorization: token.value || '' },
 });
 
 watch(error, (newErr) => {
   if (newErr) toast.add({ title: 'Error fetching decks' });
 });
 
-async function onAddToLibrary(deckId: UUID) {
+async function onAddToLibrary(deck: GetSharedManyRes) {
   if (!token.value) {
     toast.add({ title: 'Please login first before adding deck to library' });
     router.push('/login');
     return;
   }
 
-  $fetch(`/api/decks/clone/${deckId}`, {
+  deckId.value = deck.id;
+
+  if (deck.visibility === Visibility.PROTECTED) {
+    state.passcode = '';
+    isModalOpen.value = true;
+    return;
+  }
+
+  await cloneDeck();
+}
+
+async function handleSubmit(event: FormSubmitEvent<Schema>) {
+  state.passcode = event.data.passcode;
+
+  if (deckId.value) {
+    isModalOpen.value = false;
+    await cloneDeck();
+  }
+}
+
+async function cloneDeck() {
+  await $fetch(`/api/decks/clone/${deckId.value}`, {
     method: 'POST',
     headers: { Authorization: token.value || '' },
+    body: state,
   })
     .then(() => {
-      toast.add({ title: 'Deck added to library' });
+      toast.add({ title: 'Deck added to library', color: 'success' });
       router.push('/library');
     })
     .catch((err: ErrorResponse) => {
-      toast.add({ title: err.data?.message });
+      toast.add({
+        title: err.data?.message || 'Failed to add deck',
+        color: 'error',
+      });
     });
 }
 
@@ -102,7 +147,7 @@ defineShortcuts({
           custom
         >
           <UCard
-            :ui="{ body: 'space-y-4' }"
+            :ui="{ body: 'flex flex-col gap-2' }"
             class="shadow-md transition-all hover:translate-x-3"
             variant="subtle"
             @click="navigate"
@@ -193,7 +238,7 @@ defineShortcuts({
                 label="Add to library"
                 icon="i-lucide-plus"
                 variant="subtle"
-                @click.stop="() => onAddToLibrary(d.id)"
+                @click.stop="() => onAddToLibrary(d)"
               />
             </div>
           </UCard>
@@ -215,5 +260,41 @@ defineShortcuts({
       :items-per-page="Number(limit)"
       :ui="{ root: 'flex place-content-center mt-6' }"
     />
+
+    <UModal
+      v-model:open="isModalOpen"
+      :ui="{ footer: 'place-content-end' }"
+      title="Hold on!"
+      description="This deck is protected. Please enter the passcode to continue."
+    >
+      <template #body>
+        <UForm
+          id="passcode-form"
+          :schema="schema"
+          :state="state"
+          @submit="handleSubmit"
+        >
+          <UFormField name="passcode" label="Passcode" required>
+            <UInput
+              v-model="state.passcode"
+              type="password"
+              placeholder="Enter passcode"
+              autofocus
+            />
+          </UFormField>
+        </UForm>
+      </template>
+
+      <template #footer="{ close }">
+        <UButton
+          label="Cancel"
+          color="neutral"
+          variant="outline"
+          @click="close"
+        />
+
+        <UButton form="passcode-form" type="submit">Add to Library</UButton>
+      </template>
+    </UModal>
   </UContainer>
 </template>

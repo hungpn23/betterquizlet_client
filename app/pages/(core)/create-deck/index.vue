@@ -170,9 +170,7 @@ async function onCreate(event: FormSubmitEvent<CreateSchema>) {
 
   $fetch<CreateDeckRes>('/api/decks', {
     method: 'POST',
-    headers: {
-      Authorization: token.value || '',
-    },
+    headers: { Authorization: token.value || '' },
     body: event.data,
   })
     .then(() => {

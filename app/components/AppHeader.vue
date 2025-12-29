@@ -111,14 +111,20 @@ defineShortcuts({
 
           <UColorModeButton v-if="smAndLarger" class="cursor-pointer" />
 
-          <UChip inset>
-            <UButton
-              class="cursor-pointer"
-              icon="i-lucide-bell"
-              variant="ghost"
-              color="neutral"
-            />
-          </UChip>
+          <UPopover>
+            <UChip inset>
+              <UButton
+                class="cursor-pointer"
+                icon="i-lucide-bell"
+                variant="ghost"
+                color="neutral"
+              />
+            </UChip>
+
+            <!-- <template #content>
+              <Placeholder class="m-4 inline-flex size-48" />
+            </template> -->
+          </UPopover>
 
           <UDropdownMenu :items="avatarItems" :content="{ align: 'start' }">
             <UAvatar
