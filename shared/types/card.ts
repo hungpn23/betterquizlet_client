@@ -53,7 +53,10 @@ export type FlashcardSession = {
 };
 
 // --- LEARN ---
-export type LearnQuestion = Pick<Card, 'id' | 'streak' | 'reviewDate'> & {
+export type LearnQuestion = Pick<
+  Card,
+  'id' | 'streak' | 'reviewDate' | 'termLanguage' | 'definitionLanguage'
+> & {
   type: QuestionType;
   direction: QuestionDirection;
   question: string;

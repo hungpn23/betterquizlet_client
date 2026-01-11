@@ -21,6 +21,7 @@
     "@sidebase/nuxt-auth": "1.1.0",
     "@vueuse/nuxt": "^14.1.0",
     "date-fns": "^4.1.0",
+    "lodash": "^4.17.21",
     "next-auth": "4.21.1",
     "nuxt": "^4.2.2",
     "pinia": "^3.0.4",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@iconify-json/simple-icons": "^1.2.63",
     "@nuxt/eslint": "^1.12.1",
+    "@types/lodash": "^4.17.23",
     "eslint": "^9.39.2",
     "prettier": "^3.7.4",
     "prettier-plugin-tailwindcss": "^0.7.2",

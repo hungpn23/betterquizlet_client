@@ -272,277 +272,6 @@ defineShortcuts({
         @error="onSubmitError"
       >
         <UPageHeader :ui="{ title: 'flex-1' }" class="py-0 pb-8">
-          <div class="mt-4 flex flex-col-reverse gap-4 lg:flex-col">
-            <!-- Learning Options -->
-            <div class="grid grid-cols-2 gap-2 lg:grid-cols-4">
-              <UButton
-                v-for="{ label, icon, to } in studyOptions"
-                :key="label"
-                :to="to"
-                class="hover:ring-primary hover:text-primary hover:bg-primary/10 active:bg-primary/10 flex place-content-center place-items-center py-3 transition-all hover:scale-102 hover:shadow"
-                variant="subtle"
-                color="neutral"
-              >
-                <UIcon v-if="icon" :name="icon" class="size-5" />
-
-                <h3 class="truncate text-base font-medium sm:text-lg">
-                  {{ label }}
-                </h3>
-              </UButton>
-            </div>
-
-            <!-- Flashcard Study -->
-            <div v-if="session.currentCard" class="flex w-full flex-col gap-2">
-              <!-- Status bar -->
-              <div class="flex place-content-between">
-                <div class="flex place-items-center gap-2">
-                  <UBadge
-                    :label="session.skippedCount"
-                    class="rounded-full px-2"
-                    variant="subtle"
-                    color="error"
-                  />
-
-                  <span class="text-error text-sm">Skipped</span>
-                </div>
-
-                <div>
-                  {{ `${session.knownCount} / ${session.totalCards}` }}
-                </div>
-
-                <div class="flex place-items-center gap-2">
-                  <span class="text-success text-sm">Known</span>
-
-                  <UBadge
-                    :label="session.knownCount"
-                    class="rounded-full px-2"
-                    variant="subtle"
-                    color="success"
-                  />
-                </div>
-              </div>
-
-              <UCard
-                :ui="{
-                  header: 'p-0 sm:px-0',
-                  body: 'p-2 sm:p-4 sm:pt-2 w-full flex-1 flex flex-col gap-2 sm:gap-4 place-content-between place-items-center select-none',
-                }"
-                class="bg-elevated flex min-h-[50dvh] flex-col divide-none shadow-md"
-                variant="subtle"
-                @click="throttledToggleFlip"
-              >
-                <div
-                  class="flex w-full place-content-between place-items-center"
-                >
-                  <span class="flex place-items-center gap-1 font-medium">
-                    <UButton
-                      class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2"
-                      icon="i-lucide-volume-2"
-                      variant="soft"
-                      color="neutral"
-                      @click.stop="console.log('TTS not implemented yet')"
-                    />
-
-                    <span>{{
-                      !isFlipped
-                        ? `Term (${session.currentCard.termLanguage})`
-                        : `Definition (${session.currentCard.definitionLanguage})`
-                    }}</span>
-                  </span>
-
-                  <CardStatusBadge :card="session.currentCard" />
-                </div>
-
-                <div
-                  v-if="isFlipped"
-                  class="flex w-full flex-col place-content-evenly place-items-stretch gap-6 px-2 sm:flex-row"
-                >
-                  <div class="flex flex-col place-content-evenly gap-2">
-                    <div class="text-xl font-medium sm:text-2xl">
-                      {{ session.currentCard.definition }}
-                    </div>
-
-                    <div v-if="session.currentCard.examples.length">
-                      <p class="text-sm font-medium">Examples:</p>
-
-                      <ul class="list-disc pl-4">
-                        <li
-                          v-for="(example, i) in session.currentCard.examples"
-                          :key="i"
-                        >
-                          <em>
-                            {{ example }}
-
-                            <span v-if="!example.endsWith('.')">.</span>
-                          </em>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <NuxtImg
-                    src="https://avatars.githubusercontent.com/u/177613774?v=4"
-                    alt="User avatar"
-                  />
-                </div>
-
-                <div v-else class="flex flex-col place-items-center sm:px-4">
-                  <div class="space-x-2">
-                    <span class="text-2xl font-medium sm:text-3xl">
-                      {{ session.currentCard.term }}
-                    </span>
-
-                    <span v-if="session.currentCard.partOfSpeech">
-                      ({{ session.currentCard.partOfSpeech }})
-                    </span>
-                  </div>
-
-                  <em v-if="session.currentCard.pronunciation">
-                    {{ session.currentCard.pronunciation }}
-                  </em>
-                </div>
-
-                <div />
-
-                <template #header>
-                  <UProgress
-                    :model-value="progress"
-                    :ui="{ base: 'bg-inherit' }"
-                    size="sm"
-                  />
-                </template>
-              </UCard>
-
-              <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                <div class="col-span-1">
-                  <UButton
-                    v-if="user"
-                    class="w-fit p-0 hover:bg-inherit active:bg-inherit"
-                    variant="ghost"
-                    color="neutral"
-                  >
-                    <div class="flex place-items-center gap-2">
-                      <UAvatar
-                        :ui="{ fallback: 'uppercase' }"
-                        :src="user.avatarUrl || ''"
-                        :alt="user.username"
-                        class="cursor-pointer"
-                        size="xl"
-                      />
-
-                      <div class="flex flex-col place-items-start">
-                        <p class="text-muted text-sm font-normal text-pretty">
-                          Created by
-                        </p>
-
-                        <NuxtLink
-                          :to="`/${user.username}`"
-                          class="cursor-default text-base font-medium hover:underline"
-                        >
-                          {{ user.username }}
-                        </NuxtLink>
-                      </div>
-                    </div>
-                  </UButton>
-                </div>
-
-                <div
-                  class="order-first col-span-full flex place-content-center place-items-center gap-3 sm:order-0 sm:col-span-1"
-                >
-                  <UTooltip
-                    :delay-duration="200"
-                    :kbds="['arrowleft']"
-                    text="Skip this card"
-                  >
-                    <UButton
-                      label="Skip"
-                      icon="i-heroicons-x-mark"
-                      size="lg"
-                      variant="subtle"
-                      color="error"
-                      class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
-                      @click="throttledHandleAnswer(false)"
-                    />
-                  </UTooltip>
-
-                  <UTooltip
-                    :delay-duration="200"
-                    :kbds="['arrowright']"
-                    text="Next card"
-                  >
-                    <UButton
-                      label="Next"
-                      icon="i-heroicons-check"
-                      size="lg"
-                      variant="subtle"
-                      color="success"
-                      class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
-                      @click="throttledHandleAnswer(true)"
-                    />
-                  </UTooltip>
-                </div>
-
-                <div
-                  class="col-span-1 flex place-content-end place-items-center gap-1"
-                >
-                  <UButton
-                    class="h-fit cursor-pointer transition-all active:scale-80"
-                    color="neutral"
-                    icon="i-lucide-shuffle"
-                    variant="ghost"
-                    size="lg"
-                    @click="shuffleCards"
-                  />
-
-                  <UDropdownMenu :items="settingOptions">
-                    <UButton
-                      class="h-fit cursor-pointer"
-                      color="neutral"
-                      icon="i-lucide-settings"
-                      variant="ghost"
-                      size="lg"
-                    />
-                  </UDropdownMenu>
-                </div>
-              </div>
-            </div>
-
-            <UEmpty
-              v-else
-              :actions="[
-                {
-                  to: '/library',
-                  icon: 'i-lucide-house',
-                  label: 'Home',
-                  color: 'success',
-                  variant: 'subtle',
-                  class: 'cursor-pointer hover:scale-102 hover:shadow',
-                },
-                {
-                  icon: 'i-lucide-refresh-cw',
-                  label: 'Restart',
-                  color: 'error',
-                  variant: 'outline',
-                  class: 'cursor-pointer hover:scale-102 hover:shadow',
-                  onClick: store.restartDeck,
-                },
-                {
-                  icon: 'i-lucide-fast-forward',
-                  label: 'Ignore & continue',
-                  color: 'neutral',
-                  variant: 'subtle',
-                  class: 'cursor-pointer hover:scale-102 hover:shadow',
-                  onClick: () => store.updateIgnoreDate(true),
-                },
-              ]"
-              variant="naked"
-              icon="i-lucide-party-popper"
-              title="You're all caught up — nothing to review now."
-              description="Optimize your retention by strictly adhering to the next review date."
-              size="xl"
-            />
-          </div>
-
           <!-- Title and Description -->
           <template #title>
             <UFormField name="name">
@@ -576,6 +305,249 @@ defineShortcuts({
                 autoresize
               />
             </UFormField>
+          </template>
+
+          <template #default>
+            <div class="mt-4 flex flex-col-reverse gap-4 lg:flex-col">
+              <!-- Learning Options -->
+              <div class="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                <UButton
+                  v-for="{ label, icon, to } in studyOptions"
+                  :key="label"
+                  :to="to"
+                  class="hover:ring-primary hover:text-primary hover:bg-primary/10 active:bg-primary/10 flex place-content-center place-items-center py-3 transition-all hover:scale-102 hover:shadow"
+                  variant="subtle"
+                  color="neutral"
+                >
+                  <UIcon v-if="icon" :name="icon" class="size-5" />
+
+                  <h3 class="truncate text-base font-medium sm:text-lg">
+                    {{ label }}
+                  </h3>
+                </UButton>
+              </div>
+
+              <!-- Flashcard Study -->
+              <div
+                v-if="session.currentCard"
+                class="flex w-full flex-col gap-2"
+              >
+                <!-- Status bar -->
+                <div class="flex place-content-between">
+                  <div class="flex place-items-center gap-2">
+                    <UBadge
+                      :label="session.skippedCount"
+                      class="rounded-full px-2"
+                      variant="subtle"
+                      color="error"
+                    />
+
+                    <span class="text-error text-sm">Skipped</span>
+                  </div>
+
+                  <div>
+                    {{ `${session.knownCount} / ${session.totalCards}` }}
+                  </div>
+
+                  <div class="flex place-items-center gap-2">
+                    <span class="text-success text-sm">Known</span>
+
+                    <UBadge
+                      :label="session.knownCount"
+                      class="rounded-full px-2"
+                      variant="subtle"
+                      color="success"
+                    />
+                  </div>
+                </div>
+
+                <UCard
+                  :ui="{
+                    header: 'p-0 sm:px-0',
+                    body: 'p-2 sm:p-4 sm:pt-2 w-full flex-1 flex flex-col gap-2 sm:gap-4 place-content-between place-items-center select-none',
+                  }"
+                  class="bg-elevated flex min-h-[50dvh] flex-col divide-none shadow-md"
+                  variant="subtle"
+                  @click="throttledToggleFlip"
+                >
+                  <div
+                    class="flex w-full place-content-between place-items-center"
+                  >
+                    <span class="flex place-items-center gap-1 font-medium">
+                      <UButton
+                        class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2"
+                        icon="i-lucide-volume-2"
+                        variant="soft"
+                        color="neutral"
+                        @click.stop="console.log('TTS not implemented yet')"
+                      />
+
+                      <span>{{
+                        !isFlipped
+                          ? `Term (${session.currentCard.termLanguage})`
+                          : `Definition (${session.currentCard.definitionLanguage})`
+                      }}</span>
+                    </span>
+
+                    <CardStatusBadge :card="session.currentCard" />
+                  </div>
+
+                  <div
+                    v-if="isFlipped"
+                    class="flex w-full flex-col place-content-evenly place-items-stretch gap-6 px-2 sm:flex-row"
+                  >
+                    <div class="flex flex-col place-content-evenly gap-2">
+                      <div class="text-xl font-medium sm:text-2xl">
+                        {{ session.currentCard.definition }}
+                      </div>
+
+                      <div v-if="session.currentCard.examples.length">
+                        <p class="text-sm font-medium">Examples:</p>
+
+                        <ul class="list-disc pl-4">
+                          <li
+                            v-for="(example, i) in session.currentCard.examples"
+                            :key="i"
+                          >
+                            <em>
+                              {{ example }}
+
+                              <span v-if="!example.endsWith('.')">.</span>
+                            </em>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <NuxtImg
+                      src="https://avatars.githubusercontent.com/u/177613774?v=4"
+                      alt="User avatar"
+                    />
+                  </div>
+
+                  <div v-else class="flex flex-col place-items-center sm:px-4">
+                    <div class="space-x-2">
+                      <span class="text-2xl font-medium sm:text-3xl">
+                        {{ session.currentCard.term }}
+                      </span>
+
+                      <span v-if="session.currentCard.partOfSpeech">
+                        ({{ session.currentCard.partOfSpeech }})
+                      </span>
+                    </div>
+
+                    <em v-if="session.currentCard.pronunciation">
+                      {{ session.currentCard.pronunciation }}
+                    </em>
+                  </div>
+
+                  <div />
+
+                  <template #header>
+                    <UProgress
+                      :model-value="progress"
+                      :ui="{ base: 'bg-inherit' }"
+                      size="sm"
+                    />
+                  </template>
+                </UCard>
+
+                <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                  <div class="col-span-1">
+                    <UButton
+                      v-if="user"
+                      class="w-fit p-0 hover:bg-inherit active:bg-inherit"
+                      variant="ghost"
+                      color="neutral"
+                    >
+                      <div class="flex place-items-center gap-2">
+                        <UAvatar
+                          :ui="{ fallback: 'uppercase' }"
+                          :src="user.avatarUrl || ''"
+                          :alt="user.username"
+                          class="cursor-pointer"
+                          size="xl"
+                        />
+
+                        <div class="flex flex-col place-items-start">
+                          <p class="text-muted text-sm font-normal text-pretty">
+                            Created by
+                          </p>
+
+                          <NuxtLink
+                            :to="`/${user.username}`"
+                            class="cursor-default text-base font-medium hover:underline"
+                          >
+                            {{ user.username }}
+                          </NuxtLink>
+                        </div>
+                      </div>
+                    </UButton>
+                  </div>
+
+                  <div
+                    class="order-first col-span-full flex place-content-center place-items-center gap-3 sm:order-0 sm:col-span-1"
+                  >
+                    <UTooltip
+                      :delay-duration="200"
+                      :kbds="['arrowleft']"
+                      text="Skip this card"
+                    >
+                      <UButton
+                        label="Skip"
+                        icon="i-heroicons-x-mark"
+                        size="lg"
+                        variant="subtle"
+                        color="error"
+                        class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
+                        @click="throttledHandleAnswer(false)"
+                      />
+                    </UTooltip>
+
+                    <UTooltip
+                      :delay-duration="200"
+                      :kbds="['arrowright']"
+                      text="Next card"
+                    >
+                      <UButton
+                        label="Next"
+                        icon="i-heroicons-check"
+                        size="lg"
+                        variant="subtle"
+                        color="success"
+                        class="cursor-pointer transition-all hover:scale-105 hover:shadow active:scale-90"
+                        @click="throttledHandleAnswer(true)"
+                      />
+                    </UTooltip>
+                  </div>
+
+                  <div
+                    class="col-span-1 flex place-content-end place-items-center gap-1"
+                  >
+                    <UButton
+                      class="h-fit cursor-pointer transition-all active:scale-80"
+                      color="neutral"
+                      icon="i-lucide-shuffle"
+                      variant="ghost"
+                      size="lg"
+                      @click="shuffleCards"
+                    />
+
+                    <UDropdownMenu :items="settingOptions">
+                      <UButton
+                        class="h-fit cursor-pointer"
+                        color="neutral"
+                        icon="i-lucide-settings"
+                        variant="ghost"
+                        size="lg"
+                      />
+                    </UDropdownMenu>
+                  </div>
+                </div>
+              </div>
+
+              <AppEmpty v-else />
+            </div>
           </template>
         </UPageHeader>
 

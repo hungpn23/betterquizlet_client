@@ -1,3 +1,5 @@
+import { pick } from 'lodash';
+
 export const generateQuestions = <
   T extends LearnQuestion | TestQuestion,
 >(options: {
@@ -56,9 +58,13 @@ export const generateQuestions = <
     }
 
     questions.push({
-      id: card.id,
-      streak: card.streak,
-      reviewDate: card.reviewDate,
+      ...pick(card, [
+        'id',
+        'streak',
+        'reviewDate',
+        'termLanguage',
+        'definitionLanguage',
+      ]),
       type,
       direction,
       question,

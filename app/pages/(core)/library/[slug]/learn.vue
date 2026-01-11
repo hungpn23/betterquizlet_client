@@ -379,128 +379,131 @@ defineShortcuts({
           'bg-inherit p-0 ring-0': !smAndLarger,
         }"
       >
-        <div class="flex w-full place-content-between place-items-center">
-          <span class="flex place-items-center gap-1 font-medium">
-            <UButton
-              class="hover:text-primary ml-0 cursor-pointer rounded-full bg-inherit p-2"
-              icon="i-lucide-volume-2"
-              variant="soft"
-              color="neutral"
-            />
-            {{
-              session.currentQuestion.direction === 'term_to_def'
-                ? 'Term'
-                : 'Definition'
-            }}
-          </span>
-
-          <UButton
-            v-if="session.currentQuestion.type === 'written'"
-            :variant="smAndLarger ? 'soft' : 'ghost'"
-            class="mr-0 cursor-pointer"
-            icon="i-lucide-lightbulb"
-            color="neutral"
-            @click="onGetAHint"
-          >
-            Get a hint
-          </UButton>
-        </div>
-
-        <div class="text-xl font-medium sm:text-2xl">
-          {{ session.currentQuestion.question }}
-        </div>
-
-        <div class="mt-2 flex w-full flex-col gap-2">
-          <span class="font-medium">
-            {{
-              session.currentQuestion.type === 'multiple_choices'
-                ? 'Choose an answer'
-                : 'Type your answer'
-            }}
-          </span>
-
-          <!-- Multiple Choices Answer -->
-          <div
-            v-if="session.currentQuestion.type === 'multiple_choices'"
-            class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4"
-          >
-            <button
-              v-for="(choice, cIndex) in session.currentQuestion.choices"
-              :key="cIndex"
-              :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none ${getChoiceBtnClass(cIndex)}`"
-              :disabled="getChoiceDisabledState(cIndex)"
-              @click="handleChoiceShortcut(cIndex)"
-            >
-              <UBadge
-                class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full border border-inherit font-bold text-inherit ring-0 transition-all sm:flex"
-                variant="outline"
-              >
-                {{ cIndex + 1 }}
-              </UBadge>
-
-              <span class="text-start text-base font-medium sm:text-lg">
-                {{ choice }}
-              </span>
-            </button>
-          </div>
-
-          <!-- Written Answer -->
-          <div v-else class="flex w-full flex-col gap-2">
-            <UInput
-              ref="input"
-              v-model="state.userAnswer"
-              :ui="{
-                base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 ${getWrittenInputClass()}`,
-              }"
-              :disabled="state.isInReview"
-              variant="outline"
-              color="neutral"
-              autofocus
-              @keydown.enter="throttledSubmitAnswer(state.userAnswer)"
-            />
-
-            <Transition>
-              <UInput
-                v-if="isIncorrect && setting.showCorrectAnswer"
-                :ui="{
-                  base: `text-lg sm:text-xl transition-all border-2 border-dashed border-success ring-0`,
-                }"
-                :default-value="session.currentQuestion.correctAnswer"
-                disabled
-              />
-            </Transition>
-          </div>
-
-          <div class="flex place-content-end place-items-center gap-2">
-            <UButton
-              :disabled="state.isInReview"
-              class="cursor-pointer place-self-end font-medium"
-              variant="ghost"
-              color="error"
-              tabindex="-1"
-              @click="handleSkip"
-            >
-              Skip?
-            </UButton>
-
-            <UButton
-              v-if="session.currentQuestion.type === 'written'"
-              :disabled="!state.userAnswer"
-              class="cursor-pointer font-medium"
-              size="lg"
-              @click="throttledSubmitAnswer(state.userAnswer)"
-            >
-              Answer
-            </UButton>
-          </div>
-        </div>
-
         <template #header>
           <UProgress
             v-model="progress"
             :ui="{ base: 'bg-inherit' }"
             size="sm"
           />
+        </template>
+
+        <template #default>
+          <div class="flex w-full place-content-between place-items-center">
+            <span class="flex place-items-center gap-1 font-medium">
+              <UButton
+                class="hover:text-primary ml-0 cursor-pointer rounded-full bg-inherit p-2"
+                icon="i-lucide-volume-2"
+                variant="soft"
+                color="neutral"
+              />
+
+              {{
+                session.currentQuestion.direction === 'term_to_def'
+                  ? `Term (${session.currentQuestion.termLanguage})`
+                  : `Definition (${session.currentQuestion.definitionLanguage})`
+              }}
+            </span>
+
+            <UButton
+              v-if="session.currentQuestion.type === 'written'"
+              :variant="smAndLarger ? 'soft' : 'ghost'"
+              class="mr-0 cursor-pointer"
+              icon="i-lucide-lightbulb"
+              color="neutral"
+              @click="onGetAHint"
+            >
+              Get a hint
+            </UButton>
+          </div>
+
+          <div class="text-xl font-medium sm:text-2xl">
+            {{ session.currentQuestion.question }}
+          </div>
+
+          <div class="mt-2 flex w-full flex-col gap-2">
+            <span class="font-medium">
+              {{
+                session.currentQuestion.type === 'multiple_choices'
+                  ? 'Choose an answer'
+                  : 'Type your answer'
+              }}
+            </span>
+
+            <!-- Multiple Choices Answer -->
+            <div
+              v-if="session.currentQuestion.type === 'multiple_choices'"
+              class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4"
+            >
+              <button
+                v-for="(choice, cIndex) in session.currentQuestion.choices"
+                :key="cIndex"
+                :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none ${getChoiceBtnClass(cIndex)}`"
+                :disabled="getChoiceDisabledState(cIndex)"
+                @click="handleChoiceShortcut(cIndex)"
+              >
+                <UBadge
+                  class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full border border-inherit font-bold text-inherit ring-0 transition-all sm:flex"
+                  variant="outline"
+                >
+                  {{ cIndex + 1 }}
+                </UBadge>
+
+                <span class="text-start text-base font-medium sm:text-lg">
+                  {{ choice }}
+                </span>
+              </button>
+            </div>
+
+            <!-- Written Answer -->
+            <div v-else class="flex w-full flex-col gap-2">
+              <UInput
+                ref="input"
+                v-model="state.userAnswer"
+                :ui="{
+                  base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 ${getWrittenInputClass()}`,
+                }"
+                :disabled="state.isInReview"
+                variant="outline"
+                color="neutral"
+                autofocus
+                @keydown.enter="throttledSubmitAnswer(state.userAnswer)"
+              />
+
+              <Transition>
+                <UInput
+                  v-if="isIncorrect && setting.showCorrectAnswer"
+                  :ui="{
+                    base: `text-lg sm:text-xl transition-all border-2 border-dashed border-success ring-0`,
+                  }"
+                  :default-value="session.currentQuestion.correctAnswer"
+                  disabled
+                />
+              </Transition>
+            </div>
+
+            <div class="flex place-content-end place-items-center gap-2">
+              <UButton
+                :disabled="state.isInReview"
+                class="cursor-pointer place-self-end font-medium"
+                variant="ghost"
+                color="error"
+                tabindex="-1"
+                @click="handleSkip"
+              >
+                Skip?
+              </UButton>
+
+              <UButton
+                v-if="session.currentQuestion.type === 'written'"
+                :disabled="!state.userAnswer"
+                class="cursor-pointer font-medium"
+                size="lg"
+                @click="throttledSubmitAnswer(state.userAnswer)"
+              >
+                Answer
+              </UButton>
+            </div>
+          </div>
         </template>
       </UCard>
 
@@ -532,7 +535,6 @@ defineShortcuts({
         <div v-else />
 
         <div class="flex place-items-center place-self-end">
-          <!-- Options -->
           <UTooltip :delay-duration="200" text="Ignore review dates">
             <UButton
               :icon="`i-lucide-calendar${store.isIgnoreDate ? '-off' : ''}`"
@@ -555,121 +557,81 @@ defineShortcuts({
             />
           </UTooltip>
 
-          <!-- Learn Settings -->
-          <UModal
-            v-model:open="isSettingOpen"
-            :fullscreen="!smAndLarger"
-            :ui="{
-              content: 'divide-none',
-              body: 'flex-initial pt-0 sm:pt-0',
-              footer: 'place-content-end',
-            }"
-            description="Let's customize your learning session"
-            @after:enter="snapshotSetting = JSON.stringify(setting)"
-            @after:leave="onSettingClosed"
-          >
-            <UButton
-              class="cursor-pointer place-self-end"
-              icon="i-lucide-settings"
-              variant="ghost"
-              color="neutral"
-              size="lg"
-              @click="isSettingOpen = true"
-            />
-
-            <template #title>
-              <h2 class="text-xl font-semibold sm:text-2xl">Learn settings</h2>
-            </template>
-
-            <template #body>
-              <div class="flex flex-col gap-2 font-medium">
-                <div
-                  class="flex place-content-between place-items-center gap-2"
-                >
-                  <div>Show correct answer</div>
-
-                  <USwitch v-model="setting.showCorrectAnswer" size="lg" />
-                </div>
-
-                <USeparator label="Question format" />
-
-                <div
-                  class="flex place-content-between place-items-center gap-2"
-                >
-                  <div>Question types</div>
-
-                  <USelect
-                    v-model="setting.types"
-                    :items="questionTypeItems"
-                    :ui="{ content: 'min-w-fit' }"
-                    size="lg"
-                    value-key="value"
-                    multiple
-                  />
-                </div>
-
-                <div
-                  class="flex place-content-between place-items-center gap-2"
-                >
-                  <div>Answer with</div>
-
-                  <USelect
-                    v-model="setting.direction"
-                    :items="questionDirectionItems"
-                    :ui="{ content: 'min-w-fit' }"
-                    size="lg"
-                  />
-                </div>
-              </div>
-            </template>
-
-            <template #footer>
-              <UButton
-                class="cursor-pointer"
-                label="Apply changes"
-                color="neutral"
-                size="lg"
-                @click="isSettingOpen = false"
-              />
-            </template>
-          </UModal>
+          <UButton
+            class="cursor-pointer place-self-end"
+            icon="i-lucide-settings"
+            variant="ghost"
+            color="neutral"
+            size="lg"
+            @click="isSettingOpen = true"
+          />
         </div>
       </div>
     </div>
 
-    <UEmpty
-      v-else
-      :actions="[
-        {
-          to: '/library',
-          icon: 'i-lucide-house',
-          label: 'Home',
-          color: 'success',
-          variant: 'subtle',
-          class: 'cursor-pointer hover:scale-102 hover:shadow',
-        },
-        {
-          icon: 'i-lucide-refresh-cw',
-          label: 'Restart',
-          color: 'error',
-          variant: 'outline',
-          class: 'cursor-pointer hover:scale-102 hover:shadow',
-          onClick: store.restartDeck,
-        },
-        {
-          icon: 'i-lucide-fast-forward',
-          label: 'Ignore & continue',
-          color: 'neutral',
-          variant: 'subtle',
-          class: 'cursor-pointer hover:scale-102 hover:shadow',
-          onClick: () => store.updateIgnoreDate(true),
-        },
-      ]"
-      variant="naked"
-      icon="i-lucide-party-popper"
-      title="You're all caught up — nothing to review now."
-      description="Optimize your retention by strictly adhering to the next review date."
-      size="xl"
-    />
+    <AppEmpty v-else />
+
+    <UModal
+      v-model:open="isSettingOpen"
+      :fullscreen="!smAndLarger"
+      :ui="{
+        content: 'divide-none',
+        body: 'flex-initial pt-0 sm:pt-0',
+        footer: 'place-content-end',
+      }"
+      description="Let's customize your learning session"
+      @after:enter="snapshotSetting = JSON.stringify(setting)"
+      @after:leave="onSettingClosed"
+    >
+      <template #title>
+        <h2 class="text-xl font-semibold sm:text-2xl">Learn settings</h2>
+      </template>
+
+      <template #body>
+        <div class="flex flex-col gap-2 font-medium">
+          <div class="flex place-content-between place-items-center gap-2">
+            <div>Show correct answer</div>
+
+            <USwitch v-model="setting.showCorrectAnswer" size="lg" />
+          </div>
+
+          <USeparator label="Question format" />
+
+          <div class="flex place-content-between place-items-center gap-2">
+            <div>Question types</div>
+
+            <USelect
+              v-model="setting.types"
+              :items="questionTypeItems"
+              :ui="{ content: 'min-w-fit' }"
+              size="lg"
+              value-key="value"
+              multiple
+            />
+          </div>
+
+          <div class="flex place-content-between place-items-center gap-2">
+            <div>Answer with</div>
+
+            <USelect
+              v-model="setting.direction"
+              :items="questionDirectionItems"
+              :ui="{ content: 'min-w-fit' }"
+              size="lg"
+            />
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <UButton
+          class="cursor-pointer"
+          label="Apply changes"
+          color="neutral"
+          size="lg"
+          @click="isSettingOpen = false"
+        />
+      </template>
+    </UModal>
   </UContainer>
 </template>
