@@ -15,6 +15,7 @@ const isShortcutOpen = ref(false);
       body: 'flex-initial pt-0 sm:pt-0',
       footer: 'place-content-end',
     }"
+    description="It helpful!"
   >
     <UButton
       v-if="smAndLarger"
@@ -27,11 +28,11 @@ const isShortcutOpen = ref(false);
     />
 
     <template #title>
-      <span class="text-xl font-semibold sm:text-2xl">Keyboard shortcuts</span>
+      <span class="text-lg font-medium sm:text-xl">Keyboard shortcuts</span>
     </template>
 
     <template #body>
-      <div class="flex flex-col gap-2 font-semibold">
+      <div class="flex flex-col gap-2">
         <div class="flex place-content-between place-items-center gap-2">
           <div>Toggle color mode</div>
 

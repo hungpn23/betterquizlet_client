@@ -58,10 +58,4 @@ export default defineNuxtConfig({
       },
     },
   },
-
-  // vite: {
-  //   server: {
-  //     allowedHosts: ['<my-app>.nport.link'],
-  //   },
-  // },
 });

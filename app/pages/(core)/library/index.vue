@@ -2,6 +2,7 @@
 import { formatTimeAgo } from '@vueuse/core';
 
 const toast = useToast();
+const router = useRouter();
 const { token, data: user } = useAuth();
 
 const { page, limit, filter, search, filterItems, query } = useDeckSearch();
@@ -68,6 +69,9 @@ defineShortcuts({
   '/': () => {
     input.value?.inputRef?.focus();
   },
+  a: () => {
+    router.push('/create-deck');
+  },
 });
 </script>
 
@@ -83,6 +87,22 @@ defineShortcuts({
       }"
       class="my-4 border-0 py-0"
     >
+      <template #title> Welcome back, {{ user?.username }}! </template>
+
+      <template #description>
+        <ProseBlockquote>
+          {{ getDailyQuote()?.text }}
+
+          <span class="inline-block space-x-2">
+            <ProseIcon name="i-lucide-minus" />
+
+            <span class="font-medium not-italic">
+              {{ getDailyQuote()?.author }}
+            </span>
+          </span>
+        </ProseBlockquote>
+      </template>
+
       <div class="flex flex-col gap-2 sm:flex-row sm:gap-4">
         <UPageCard
           v-for="(item, index) in computedUserStatItems"
@@ -110,22 +130,6 @@ defineShortcuts({
           </div>
         </UPageCard>
       </div>
-
-      <template #title> Welcome back, {{ user?.username }}! </template>
-
-      <template #description>
-        <ProseBlockquote>
-          {{ getDailyQuote()?.text }}
-
-          <span class="inline-block space-x-2">
-            <ProseIcon name="i-lucide-minus" />
-
-            <span class="font-medium not-italic">
-              {{ getDailyQuote()?.author }}
-            </span>
-          </span>
-        </ProseBlockquote>
-      </template>
     </UPageHeader>
 
     <UPageBody class="mt-2 space-y-4 sm:mt-4">
@@ -139,12 +143,15 @@ defineShortcuts({
 
           <UButton
             class="cursor-pointer place-self-start transition-all hover:scale-105"
-            label="Add"
+            label="Add a new deck"
             variant="subtle"
             icon="i-lucide-plus"
             to="/create-deck"
-            size="lg"
-          />
+          >
+            <template #trailing>
+              <UKbd class="hidden sm:flex" color="primary" value="a" />
+            </template>
+          </UButton>
         </div>
 
         <div
