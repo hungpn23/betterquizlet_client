@@ -15,24 +15,26 @@ declare module "vue" {
 export default defineNuxtPlugin(() => {
 	const { token } = useAuth();
 
-	const socket = io("http://localhost:3001/notifications", {
-		extraHeaders: { Authorization: token.value || "" },
-		withCredentials: true,
-	});
-
-	socket.on("connect", () => {
-		socket.on("socketConnected", (_message: string) => {
-			console.log("Connected to Socket.IO server.");
+	if (token.value) {
+		const socket = io("http://localhost:3001/notifications", {
+			extraHeaders: { Authorization: token.value || "" },
+			withCredentials: true,
 		});
-	});
 
-	socket.on("disconnect", () => {
-		console.log("Disconnected from Socket.IO server.");
-	});
+		socket.on("connect", () => {
+			socket.on("socketConnected", (_message: string) => {
+				console.log("Connected to Socket.IO server.");
+			});
+		});
 
-	socket.on("connect_error", (_error: Error) => {
-		console.error("Socket.IO connection error.");
-	});
+		socket.on("disconnect", () => {
+			console.log("Disconnected from Socket.IO server.");
+		});
 
-	return { provide: { socket } };
+		socket.on("connect_error", (_error: Error) => {
+			console.error("Socket.IO connection error.");
+		});
+
+		return { provide: { socket } };
+	}
 });
