@@ -14,6 +14,7 @@ useSeoMeta({
 	description: "Login to your account to continue",
 });
 
+const router = useRouter();
 const toast = useToast();
 const { signIn } = useAuth();
 const config = useRuntimeConfig();
@@ -34,9 +35,7 @@ const providers = [
 	{
 		label: "Magic Link",
 		icon: "i-simple-icons-simplelogin",
-		onClick: () => {
-			toast.add({ title: "Magic Link", description: "Login with Magic Link" });
-		},
+		onClick: () => router.push("/magic-link"),
 	},
 ];
 
@@ -72,7 +71,6 @@ function onSubmit(payload: FormSubmitEvent<LogInSchema>) {
     :schema="logInSchema"
     :providers="providers"
     title="Vocabify"
-    separator="or using credentials"
     @submit.prevent="onSubmit"
   >
     <template #password-hint>

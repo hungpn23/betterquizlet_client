@@ -1,7 +1,11 @@
 import * as v from "valibot";
 
-export const logInSchema = v.object({
+export const magicLinkSchema = v.object({
 	email: v.pipe(v.string(), v.email("Invalid email address")),
+});
+
+export const logInSchema = v.object({
+	...magicLinkSchema.entries,
 	password: v.message(
 		v.pipe(
 			v.string(),
@@ -26,6 +30,7 @@ export const signUpSchema = v.pipe(
 	),
 );
 
+export type MagicLinkSchema = v.InferOutput<typeof magicLinkSchema>;
 export type LogInSchema = v.InferOutput<typeof logInSchema>;
 export type SignUpSchema = v.InferOutput<typeof signUpSchema>;
 

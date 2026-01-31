@@ -82,7 +82,7 @@ export const profileTabItems = [
 	},
 ];
 
-export const logInFields = [
+export const magicLinkFields = [
 	{
 		name: "email",
 		type: "email" as const,
@@ -90,11 +90,16 @@ export const logInFields = [
 		placeholder: "Enter your email",
 		required: true,
 	},
+];
+
+export const logInFields = [
+	...magicLinkFields,
 	{
 		name: "password",
 		label: "Password",
 		type: "password" as const,
 		placeholder: "Enter your password",
+		required: true,
 	},
 ];
 
@@ -105,18 +110,6 @@ export const signUpFields = [
 		label: "Confirm password",
 		type: "password" as const,
 		placeholder: "Enter your confirm password",
-	},
-];
-
-export const authProviders = [
-	{
-		label: "Google",
-		class: "cursor-pointer",
-		icon: "i-simple-icons-google",
-	},
-	{
-		label: "Github",
-		class: "cursor-pointer",
-		icon: "i-simple-icons-github",
+		required: true,
 	},
 ];
