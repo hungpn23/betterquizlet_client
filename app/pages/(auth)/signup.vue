@@ -35,10 +35,8 @@ const providers = [
 ];
 
 function onSubmit(payload: FormSubmitEvent<SignUpSchema>) {
-	signUp(payload.data, { callbackUrl: "/library" }).catch(
-		(_: ErrorResponse) => {
-			toast.add({ title: "Login failed" });
-		},
+	signUp(payload.data, { callbackUrl: "/library" }).catch(() =>
+		toast.add({ title: "Login failed" }),
 	);
 }
 </script>
@@ -50,7 +48,7 @@ function onSubmit(payload: FormSubmitEvent<SignUpSchema>) {
     :providers="providers"
     :submit="{ label: 'Create account' }"
     title="Create an account"
-    @submit.prevent="onSubmit"
+    @submit="onSubmit"
   >
     <template #footer>
       Already have an account?

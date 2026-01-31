@@ -84,10 +84,10 @@ export const profileTabItems = [
 
 export const logInFields = [
 	{
-		name: "username",
-		type: "text" as const,
-		label: "Username",
-		placeholder: "Enter your username",
+		name: "email",
+		type: "email" as const,
+		label: "Email",
+		placeholder: "Enter your email",
 		required: true,
 	},
 	{

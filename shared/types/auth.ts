@@ -1,11 +1,7 @@
 import * as v from "valibot";
 
 export const logInSchema = v.object({
-	username: v.pipe(
-		v.string(),
-		v.minLength(6, "Must be at least 6 characters"),
-		v.maxLength(20, "Must be at most 20 characters"),
-	),
+	email: v.pipe(v.string(), v.email("Invalid email address")),
 	password: v.message(
 		v.pipe(
 			v.string(),
@@ -17,13 +13,13 @@ export const logInSchema = v.object({
 
 export const signUpSchema = v.pipe(
 	v.object({
-		loginSchema: logInSchema,
+		...logInSchema.entries,
 		confirmPassword: v.pipe(v.string()),
 	}),
 	v.forward(
 		v.partialCheck(
-			[["loginSchema"], ["confirmPassword"]],
-			(input) => input.loginSchema.password === input.confirmPassword,
+			[["password"], ["confirmPassword"]],
+			(input) => input.password === input.confirmPassword,
 			"Passwords do not match",
 		),
 		["confirmPassword"],
