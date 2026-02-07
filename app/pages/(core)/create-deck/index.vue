@@ -16,14 +16,6 @@ import {
 	visibilityItems,
 } from "./select-items";
 
-const NEW_CARD: CreateCardSchema = {
-	term: "",
-	definition: "",
-	termLanguage: "en",
-	definitionLanguage: "vi",
-	examples: [""],
-};
-
 const router = useRouter();
 const toast = useToast();
 const { token } = useAuth();
@@ -46,7 +38,7 @@ const createState = reactive<CreateDeckSchema>({
 	name: "",
 	description: "",
 	visibility: Visibility.PUBLIC,
-	cards: [{ ...NEW_CARD }, { ...NEW_CARD }, { ...NEW_CARD }, { ...NEW_CARD }],
+	cards: [getNewCard(), getNewCard(), getNewCard(), getNewCard()],
 });
 
 const importState = reactive({
@@ -139,7 +131,7 @@ function applySuggestion(card: CreateCardSchema, index: number) {
 	card.pronunciation = suggestion.pronunciation;
 	card.examples = suggestion.examples.length ? suggestion.examples : [""];
 
-	definitionRef.value?.[index]?.textareaRef.focus();
+	definitionRef.value?.[index]?.textareaRef?.focus();
 }
 
 function onPasscodeInputMounted() {
@@ -500,7 +492,7 @@ async function onError(event: FormErrorEvent) {
 
         <UCard
           class="hover:border-primary/75 hover:text-primary/75 border-accented text-muted flex h-28 cursor-pointer place-content-center place-items-center border-2 border-dashed ring-0 transition-all select-none active:scale-95"
-          @click="createState.cards.push({ ...NEW_CARD })"
+          @click="createState.cards.push(getNewCard())"
         >
           <div class="flex place-content-center place-items-center gap-2">
             <UIcon name="i-lucide-plus" class="size-8" />
