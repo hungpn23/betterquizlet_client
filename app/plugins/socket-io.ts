@@ -17,7 +17,7 @@ export default defineNuxtPlugin(() => {
 	const { token } = useAuth();
 
 	if (token.value) {
-		const socket = io(`${config.apiUrl}/notifications`, {
+		const socket = io(`${config.public.apiUrl}/notifications`, {
 			extraHeaders: { Authorization: token.value || "" },
 			withCredentials: true,
 		});
