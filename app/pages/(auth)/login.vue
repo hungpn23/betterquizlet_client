@@ -1,33 +1,25 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
 import * as v from "valibot";
-import { baseAuthSchema } from "~/features/auth/schemas";
+import { AUTH_SCHEMA } from "~/features/auth/constants";
 import { applyProviderHandlers, pickFields } from "~/features/auth/utils";
 
 definePageMeta({
 	layout: "auth",
 	auth: {
 		unauthenticatedOnly: true,
-		navigateAuthenticatedTo: "/",
+		navigateAuthenticatedTo: "/library",
 	},
 });
+useSeoMeta({ title: "Login to Vocabify" });
 
-useSeoMeta({
-	title: "Login",
-	description: "Login to your account to continue",
-});
-
-const schema = v.pick(baseAuthSchema, ["email", "password"]);
-
+const schema = v.pick(AUTH_SCHEMA, ["email", "password"]);
 const providerWithHandlers = applyProviderHandlers({
 	google: handleLoginWithGoogle,
 	"magic-link": handleLoginWithMagicLink,
 });
 
-const router = useRouter();
-const toast = useToast();
-const { signIn } = useAuth();
-const config = useRuntimeConfig();
+const { googleRedirectUri, googleClientId } = useRuntimeConfig().public;
 
 function handleLoginWithGoogle() {
 	const scope = [
@@ -36,8 +28,8 @@ function handleLoginWithGoogle() {
 	].join(" ");
 
 	const options: GoogleQueryParams = {
-		redirect_uri: config.public.googleRedirectUri,
-		client_id: config.public.googleClientId,
+		redirect_uri: googleRedirectUri,
+		client_id: googleClientId,
 		response_type: "code",
 		scope,
 		prompt: "select_account",
@@ -49,17 +41,19 @@ function handleLoginWithGoogle() {
 }
 
 function handleLoginWithMagicLink() {
-	router.push("/magic-link");
+	useRouter().push("/magic-link");
 }
 
 function onSubmit(payload: FormSubmitEvent<v.InferOutput<typeof schema>>) {
-	signIn(payload.data, { callbackUrl: "/library" }).catch(() => {
-		toast.add({
-			title: "Login failed",
-			description: "Please check your credentials and try again.",
-			color: "error",
+	useAuth()
+		.signIn(payload.data, { callbackUrl: "/library" })
+		.catch(() => {
+			useToast().add({
+				title: "Login failed",
+				description: "Please check your credentials and try again.",
+				color: "error",
+			});
 		});
-	});
 }
 </script>
 

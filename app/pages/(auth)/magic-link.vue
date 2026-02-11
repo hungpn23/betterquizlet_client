@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
 import * as v from "valibot";
-import { baseAuthSchema } from "~/features/auth/schemas";
+import { AUTH_SCHEMA } from "~/features/auth/constants";
 import { pickFields } from "~/features/auth/utils";
 import { api } from "~/shared/apis";
 import { ERROR_MESSAGES } from "~/shared/constants";
@@ -10,13 +10,12 @@ definePageMeta({
 	layout: "auth",
 	auth: {
 		unauthenticatedOnly: true,
-		navigateAuthenticatedTo: "/",
+		navigateAuthenticatedTo: "/library",
 	},
 });
+useSeoMeta({ title: "Login with Email" });
 
-useSeoMeta({ title: "Login with Magic Link" });
-
-const schema = v.pick(baseAuthSchema, ["email"]);
+const schema = v.pick(AUTH_SCHEMA, ["email"]);
 
 const toast = useToast();
 

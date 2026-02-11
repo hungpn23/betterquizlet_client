@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
 import * as v from "valibot";
-import { baseAuthSchema } from "~/features/auth/schemas";
+import { AUTH_SCHEMA } from "~/features/auth/constants";
 import { pickFields } from "~/features/auth/utils";
 
 definePageMeta({
 	layout: "auth",
 	auth: {
 		unauthenticatedOnly: true,
-		navigateAuthenticatedTo: "/",
+		navigateAuthenticatedTo: "/library",
 	},
 });
 
@@ -18,7 +18,7 @@ useSeoMeta({
 });
 
 const schema = v.pipe(
-	v.pick(baseAuthSchema, ["email", "password", "confirmPassword"]),
+	v.pick(AUTH_SCHEMA, ["email", "password", "confirmPassword"]),
 	v.forward(
 		v.partialCheck(
 			[["password"], ["confirmPassword"]],
