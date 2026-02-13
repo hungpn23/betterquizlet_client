@@ -1,6 +1,11 @@
 import type { FetchError } from "ofetch";
 
-export type ErrorDetail = {
+export type SuccessResponse = {
+	success: boolean;
+	message?: string;
+};
+
+export type ErrorResponseDetail = {
 	property: string;
 	constraintName: string;
 	message: string;
@@ -11,5 +16,5 @@ export type ErrorResponse = FetchError<{
 	statusCode: number;
 	statusMessage?: string;
 	message: string;
-	details?: ErrorDetail[];
+	details?: ErrorResponseDetail[];
 }>;

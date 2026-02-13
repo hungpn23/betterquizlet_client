@@ -1,45 +1,33 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
+import * as v from "valibot";
+import {
+	AUTH_SCHEMA,
+	applyProviderHandlers,
+	type GoogleQueryParams,
+	pickFields,
+	useAuthToasts,
+} from "~/features/auth";
 
 definePageMeta({
 	layout: "auth",
 	auth: {
 		unauthenticatedOnly: true,
-		navigateAuthenticatedTo: "/",
+		navigateAuthenticatedTo: "/library",
 	},
 });
 
-useSeoMeta({
-	title: "Login",
-	description: "Login to your account to continue",
+const schema = v.pick(AUTH_SCHEMA, ["email", "password"]);
+const providerWithHandlers = applyProviderHandlers({
+	google: handleLoginWithGoogle,
+	"magic-link": handleLoginWithMagicLink,
 });
-
-const router = useRouter();
-const toast = useToast();
-const { signIn } = useAuth();
 const config = useRuntimeConfig();
+const router = useRouter();
+const auth = useAuth();
+const toast = useAuthToasts();
 
-const providers = [
-	{
-		label: "Google",
-		icon: "i-simple-icons-google",
-		onClick: onGoogleLogin,
-	},
-	{
-		label: "Github",
-		icon: "i-simple-icons-github",
-		onClick: () => {
-			toast.add({ title: "GitHub", description: "Login with GitHub" });
-		},
-	},
-	{
-		label: "Magic Link",
-		icon: "i-simple-icons-simplelogin",
-		onClick: () => router.push("/magic-link"),
-	},
-];
-
-function onGoogleLogin() {
+function handleLoginWithGoogle() {
 	const scope = [
 		"https://www.googleapis.com/auth/userinfo.email",
 		"https://www.googleapis.com/auth/userinfo.profile",
@@ -58,20 +46,28 @@ function onGoogleLogin() {
 	window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${searchParams}`;
 }
 
-function onSubmit(payload: FormSubmitEvent<LogInSchema>) {
-	signIn(payload.data, { callbackUrl: "/library" }).catch(() => {
-		toast.add({ title: "Login failed" });
-	});
+function handleLoginWithMagicLink() {
+	router.push("/magic-link");
+}
+
+function handleSubmit(payload: FormSubmitEvent<v.InferOutput<typeof schema>>) {
+	auth
+		.signIn(payload.data, { callbackUrl: "/library" })
+		.then(async () => {
+			const session = await auth.getSession();
+			toast.loginSuccess(session?.username);
+		})
+		.catch(toast.loginFailed);
 }
 </script>
 
 <template>
   <UAuthForm
-    :fields="logInFields"
-    :schema="logInSchema"
-    :providers="providers"
-    title="Vocabify"
-    @submit.prevent="onSubmit"
+    :fields="pickFields(['email', 'password'])"
+    :schema="schema"
+    :providers="providerWithHandlers"
+    title="Sign in to Vocabify"
+    @submit.prevent="handleSubmit"
   >
     <template #password-hint>
       <ULink to="/" class="text-primary font-medium" tabindex="-1">
