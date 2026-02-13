@@ -16,8 +16,7 @@ definePageMeta({
 const schema = v.pick(AUTH_SCHEMA, ["email"]);
 const toast = useToast();
 const email = ref("");
-const { execute, status, data, error } =
-	api.auth.requestMagicLinkMutation(email);
+const { execute, status, data, error } = api.auth.requestMagicLink(email);
 
 async function handleSubmit(
 	payload: FormSubmitEvent<v.InferOutput<typeof schema>>,

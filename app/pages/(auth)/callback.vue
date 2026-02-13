@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { useAuthToasts } from "~/features/auth";
+import { useAuthToasts, useUsers } from "~/features/auth";
 import { api } from "~/shared/apis";
 
 definePageMeta({
@@ -12,10 +12,9 @@ definePageMeta({
 const route = useRoute();
 const router = useRouter();
 const toast = useAuthToasts();
-const auth = useAuth();
-const authState = useAuthState();
+const users = useUsers();
 const token = computed(() => route.query.token as string);
-const { execute, data, error, pending } = api.auth.verifyTokenMutation(token);
+const { execute, data, error, pending } = api.auth.verifyToken(token);
 
 onMounted(async () => {
 	if (!token.value) return router.push("/login");
@@ -28,13 +27,7 @@ onMounted(async () => {
 	}
 
 	if (data.value) {
-		authState.setToken(data.value.accessToken);
-		authState.rawRefreshToken.value = data.value.refreshToken;
-
-		const session = await auth.getSession();
-		toast.loginSuccess(session?.username);
-
-		await navigateTo("/library");
+		await users.authenticate(data.value);
 	}
 });
 </script>

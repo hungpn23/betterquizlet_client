@@ -1,3 +1,5 @@
+import type { TokenPairResponse } from "~/shared/apis";
+
 export const useAuthToasts = () => {
 	const toast = useToast();
 
@@ -58,5 +60,23 @@ export const useAuthToasts = () => {
 				icon: "i-lucide-circle-x",
 			});
 		},
+	};
+};
+
+export const useUsers = () => {
+	const auth = useAuth();
+	const authState = useAuthState();
+	const toast = useAuthToasts();
+
+	const authenticate = async (tokenPair: TokenPairResponse) => {
+		authState.setToken(tokenPair.accessToken);
+		authState.rawRefreshToken.value = tokenPair.refreshToken;
+		const session = await auth.getSession();
+		await navigateTo("/library");
+		toast.loginSuccess(session?.username);
+	};
+
+	return {
+		authenticate,
 	};
 };

@@ -1,26 +1,45 @@
-import type { AuthFormField, ButtonProps } from "@nuxt/ui";
+import type {
+	AuthFormField,
+	AuthFormInputField,
+	AuthFormOtpField,
+	ButtonProps,
+} from "@nuxt/ui";
 import * as v from "valibot";
 import type { AuthField, ProviderId } from "./types";
 
 export const DEFAULT_FIELDS: AuthFormField[] = [
 	{
+		name: "username" satisfies AuthField,
+		type: "text",
+		label: "Username",
+		placeholder: "Enter your username",
+		required: true,
+	} satisfies AuthFormInputField,
+	{
 		name: "email" satisfies AuthField,
-		type: "email" as const,
+		type: "email",
 		label: "Email",
 		placeholder: "Enter your email",
 		required: true,
 	},
 	{
+		name: "otp" satisfies AuthField,
+		type: "otp",
+		label: "Enter OTP from your reveived email",
+		required: true,
+		length: 6,
+	} satisfies AuthFormOtpField,
+	{
 		name: "password" satisfies AuthField,
+		type: "password",
 		label: "Password",
-		type: "password" as const,
 		placeholder: "Enter your password",
 		required: true,
 	},
 	{
 		name: "confirmPassword" satisfies AuthField,
+		type: "password",
 		label: "Confirm password",
-		type: "password" as const,
 		placeholder: "Enter your confirm password",
 		required: true,
 	},
@@ -45,10 +64,15 @@ export const AUTH_PROVIDERS: (ButtonProps & { id: ProviderId })[] = [
 ] as const;
 
 export const AUTH_SCHEMA = v.object({
+	username: v.message(
+		v.pipe(v.string(), v.minLength(1)),
+		"Username is required.",
+	),
 	email: v.message(
 		v.pipe(v.string(), v.email()),
 		"Please enter a valid email address.",
 	),
+	otp: v.pipe(v.array(v.string()), v.minLength(6, "Please enter a valid OTP.")),
 	password: v.message(
 		v.pipe(
 			v.string(),

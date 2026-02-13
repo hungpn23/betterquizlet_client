@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
 import * as v from "valibot";
-import { AUTH_SCHEMA, pickFields } from "~/features/auth";
+import {
+	AUTH_SCHEMA,
+	pickFields,
+	useAuthToasts,
+	useUsers,
+} from "~/features/auth";
+import { api, type SignUpState } from "~/shared/apis";
 
 definePageMeta({
 	layout: "auth",
@@ -11,8 +17,10 @@ definePageMeta({
 	},
 });
 
+const emailSchema = v.pick(AUTH_SCHEMA, ["email"]);
+const otpSchema = v.pick(AUTH_SCHEMA, ["otp"]);
 const schema = v.pipe(
-	v.pick(AUTH_SCHEMA, ["email", "password", "confirmPassword"]),
+	v.pick(AUTH_SCHEMA, ["username", "password", "confirmPassword"]),
 	v.forward(
 		v.partialCheck(
 			[["password"], ["confirmPassword"]],
@@ -22,30 +30,107 @@ const schema = v.pipe(
 		["confirmPassword"],
 	),
 );
-const toast = useToast();
-const auth = useAuth();
+const users = useUsers();
+const toast = useAuthToasts();
+const state = reactive<SignUpState>({
+	email: "",
+	otp: "",
+	username: "",
+	password: "",
+	isRequested: false,
+	isEmailVerified: false,
+	verifiedToken: "",
+});
+const requestMutation = api.auth.requestEmailVerification(state);
+const confirmMutation = api.auth.confirmEmailVerification(state);
+const signUpMutation = api.auth.signUpMutation(state);
 
-function onSubmit(payload: FormSubmitEvent<v.InferOutput<typeof schema>>) {
-	auth
-		.signUp(payload.data, { callbackUrl: "/library" })
-		.then(() => {
-			toast.add({
-				title: "Sign up successful",
-				color: "success",
-			});
-		})
-		.catch(() => toast.add({ title: "Sign up failed" }));
+async function handleEmailSubmit(
+	payload: FormSubmitEvent<v.InferOutput<typeof emailSchema>>,
+) {
+	state.email = payload.data.email;
+	await requestMutation.execute();
+
+	if (requestMutation.data.value?.success) {
+		state.isRequested = true;
+	}
+
+	if (requestMutation.error.value) {
+		toast.signUpFailed();
+	}
+}
+
+async function handleOtpSubmit(
+	payload: FormSubmitEvent<v.InferOutput<typeof otpSchema>>,
+) {
+	state.otp = payload.data.otp.join("");
+	await confirmMutation.execute();
+
+	if (confirmMutation.data.value?.verifiedToken) {
+		state.isEmailVerified = true;
+		state.verifiedToken = confirmMutation.data.value.verifiedToken;
+	}
+
+	if (confirmMutation.error.value) {
+		toast.signUpFailed();
+	}
+}
+
+async function handleSignUpSubmit(
+	payload: FormSubmitEvent<v.InferOutput<typeof schema>>,
+) {
+	state.username = payload.data.username;
+	state.password = payload.data.password;
+	await signUpMutation.execute();
+
+	if (signUpMutation.data.value) {
+		await users.authenticate(signUpMutation.data.value);
+	}
+
+	if (signUpMutation.error.value) {
+		toast.signUpFailed();
+	}
 }
 </script>
 
 <template>
-  <UAuthForm
-    :fields="pickFields(['email', 'password', 'confirmPassword'])"
+  <UAuthForm v-if="state.isRequested && state.isEmailVerified"
+    :fields="pickFields(['username', 'password', 'confirmPassword'])"
     :schema="schema"
     title="Sign up to Vocabify"
-    @submit="onSubmit"
+    description="Let's create your account"
+    @submit="handleSignUpSubmit"
   >
-    <template #description>
+
+    <template #footer>
+      Already have an account?
+      <ULink to="/login" class="text-primary font-medium">Login</ULink>
+    </template>
+  </UAuthForm>
+
+  <UAuthForm v-else-if="state.isRequested"
+    :fields="pickFields(['otp'])"
+    :schema="otpSchema"
+    title="Sign up to Vocabify"
+    description="Let's verify your email"
+    @submit="handleOtpSubmit"
+  >
+
+    <template #footer>
+      Already have an account?
+      <ULink to="/login" class="text-primary font-medium">Login</ULink>
+    </template>
+  </UAuthForm>
+
+  <UAuthForm v-else
+    :fields="pickFields(['email'])"
+    :schema="emailSchema"
+    title="Sign up to Vocabify"
+    description="Let's verify your email"
+    @submit="handleEmailSubmit"
+  >
+
+    <template #footer>
       Already have an account?
       <ULink to="/login" class="text-primary font-medium">Login</ULink>
     </template>
