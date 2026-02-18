@@ -5,7 +5,7 @@ import { api } from "~/shared/apis";
 definePageMeta({
 	auth: {
 		unauthenticatedOnly: true,
-		navigateAuthenticatedTo: "/",
+		navigateAuthenticatedTo: "/library",
 	},
 });
 

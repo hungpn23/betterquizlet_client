@@ -3,7 +3,8 @@ import type { FormSubmitEvent } from "@nuxt/ui";
 import * as v from "valibot";
 import { AUTH_SCHEMA, pickFields } from "~/features/auth";
 import { api } from "~/shared/apis";
-import { ERROR_MESSAGES } from "~/shared/constants";
+
+import { ErrorMessage } from "~/shared/enums";
 
 definePageMeta({
 	layout: "auth",
@@ -27,7 +28,7 @@ async function handleSubmit(
 	if (error.value) {
 		toast.add({
 			title: "Failed to login with email",
-			description: error.value.data?.message || ERROR_MESSAGES.UNKNOWN,
+			description: error.value.data?.message || ErrorMessage.UNKNOWN,
 			color: "error",
 		});
 		return;

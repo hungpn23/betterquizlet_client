@@ -94,35 +94,7 @@ async function handleSignUpSubmit(
 </script>
 
 <template>
-  <UAuthForm v-if="state.isRequested && state.isEmailVerified"
-    :fields="pickFields(['username', 'password', 'confirmPassword'])"
-    :schema="schema"
-    title="Sign up to Vocabify"
-    description="Let's create your account"
-    @submit="handleSignUpSubmit"
-  >
-
-    <template #footer>
-      Already have an account?
-      <ULink to="/login" class="text-primary font-medium">Login</ULink>
-    </template>
-  </UAuthForm>
-
-  <UAuthForm v-else-if="state.isRequested"
-    :fields="pickFields(['otp'])"
-    :schema="otpSchema"
-    title="Sign up to Vocabify"
-    description="Let's verify your email"
-    @submit="handleOtpSubmit"
-  >
-
-    <template #footer>
-      Already have an account?
-      <ULink to="/login" class="text-primary font-medium">Login</ULink>
-    </template>
-  </UAuthForm>
-
-  <UAuthForm v-else
+  <UAuthForm v-if="!state.isRequested && !state.isEmailVerified"
     :fields="pickFields(['email'])"
     :schema="emailSchema"
     title="Sign up to Vocabify"
@@ -135,4 +107,32 @@ async function handleSignUpSubmit(
       <ULink to="/login" class="text-primary font-medium">Login</ULink>
     </template>
   </UAuthForm>
+
+  <UAuthForm v-else-if="state.isRequested && !state.isEmailVerified"
+    :fields="pickFields(['otp'])"
+    :schema="otpSchema"
+    title="Sign up to Vocabify"
+    description="Let's verify your email"
+    @submit="handleOtpSubmit"
+  >
+
+    <template #footer>
+      Already have an account?
+      <ULink to="/login" class="text-primary font-medium">Login</ULink>
+    </template>
+  </UAuthForm>
+  
+  <UAuthForm v-else
+    :fields="pickFields(['username', 'password', 'confirmPassword'])"
+    :schema="schema"
+    title="Sign up to Vocabify"
+    description="Let's create your account"
+    @submit="handleSignUpSubmit"
+  >
+
+    <template #footer>
+      Already have an account?
+      <ULink to="/login" class="text-primary font-medium">Login</ULink>
+    </template>
+  </UAuthForm>  
 </template>

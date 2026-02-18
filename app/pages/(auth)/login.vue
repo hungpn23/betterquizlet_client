@@ -47,7 +47,7 @@ function handleLoginWithGoogle() {
 }
 
 function handleLoginWithMagicLink() {
-	router.push("/magic-link");
+	router.push("/login-with-email");
 }
 
 function handleSubmit(payload: FormSubmitEvent<v.InferOutput<typeof schema>>) {
